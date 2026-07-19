@@ -91,7 +91,8 @@ Repository target: `bluehidesleather/halalpulse`
 - Every application import and static internal PHP link resolves, and CSS delimiters are balanced.
 - No real database password, token, API key, cookie, Telegram chat ID, or bot credential is included.
 - No VPS-only dependency or per-minute polling schedule is included.
-- PHP/MySQL runtime and live endpoint tests remain pending because this build environment has no PHP executable or database service.
+- GitHub CI now provisions PHP 8.3 and MySQL 8, lints the full PHP tree, runs the dependency-free test suite, imports the canonical schema, and executes the deployment health check.
+- Live endpoint tests remain intentionally pending because NSE/BSE and government website contracts must be probed from the actual shared-hosting account before activation.
 - NSE/BSE website JSON and all five government source contracts must be probed from the shared-hosting account before activation. Cloud-browser access can differ from production-host access and anti-bot policy.
 
 ## Activation gates
@@ -104,4 +105,4 @@ Run the exchange and government probes, activate the reviewed policy/methodology
 
 ## GitHub publication state
 
-The current ChatGPT GitHub connection can read the public repository and reports push/admin permission in repository metadata, but the connected GitHub App returns no installed accounts or installations. The 2026-07-19 attempt to create `agent/telegram-alerts-v0.9` from `main` was denied by GitHub's Git-reference endpoint with `403 Resource not accessible by integration`; no branch, commit, or file changed remotely. Publish this checkpoint to that branch once the GitHub App is installed/authorized for `bluehidesleather/halalpulse` or another write-capable authorization becomes available. Do not replace or force-push `main`.
+The GitHub App is installed for `bluehidesleather/halalpulse`. Version 0.9.0 is published on `agent/telegram-alerts-v0.9` and is under review in draft pull request #1. The release tree contains the expected source paths and remains isolated from `main`; do not replace or force-push `main`.

@@ -1,0 +1,106 @@
+name: HalalPulse CI
+
+"on":
+  pull_request:
+  push:
+    branches:
+      - "agent/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: halalpulse-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: PHP 8.3 and MySQL 8 validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: halalpulse_test
+          MYSQL_USER: halalpulse
+          MYSQL_PASSWORD: halalpulse_ci
+          MYSQL_ROOT_PASSWORD: root_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot_ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_mysql, curl, json, mbstring, bcmath, dom, openssl
+          coverage: none
+
+      - name: Verify required PHP extensions
+        run: |
+          php -r '
+            $required = ["pdo_mysql", "curl", "json", "mbstring", "bcmath", "dom", "openssl"];
+            $missing = array_values(array_filter($required, static fn (string $extension): bool => !extension_loaded($extension)));
+            if ($missing !== []) {
+                fwrite(STDERR, "Missing PHP extensions: " . implode(", ", $missing) . PHP_EOL);
+                exit(1);
+            }
+          '
+
+      - name: Lint PHP files
+        run: find . -type f -name '*.php' -print0 | sort -z | xargs -0 -n1 php -l
+
+      - name: Run dependency-free test suite
+        run: php tests/run.php
+
+      - name: Decode JSON fixtures and example policies
+        run: |
+          find config tests/fixtures -type f -name '*.json' -print0 \
+            | sort -z \
+            | xargs -0 -n1 php -r '
+                $path = $argv[1];
+                json_decode((string) file_get_contents($path), true, 512, JSON_THROW_ON_ERROR);
+                echo "Valid JSON: {$path}" . PHP_EOL;
+              '
+
+      - name: Import the canonical MySQL schema
+        env:
+          MYSQL_PWD: halalpulse_ci
+        run: |
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test < database/schema.sql
+          table_count="$(mysql --protocol=TCP -N -B -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'halalpulse_test';")"
+          test "$table_count" -eq 24
+
+      - name: Create isolated CI configuration
+        run: |
+          php -r '
+            $config = require "config/config.example.php";
+            $config["app"]["environment"] = "testing";
+            $config["app"]["log_path"] = getcwd() . "/storage/logs/halalpulse.jsonl";
+            $config["security"]["app_key"] = str_repeat("c", 64);
+            $config["database"]["host"] = "127.0.0.1";
+            $config["database"]["name"] = "halalpulse_test";
+            $config["database"]["user"] = "halalpulse";
+            $config["database"]["password"] = "halalpulse_ci";
+            $config["documents"]["storage_path"] = getcwd() . "/storage/documents";
+            file_put_contents(
+                "config/config.local.php",
+                "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($config, true) . ";\n",
+            );
+          '
+
+      - name: Run deployment health check
+        run: php cron/healthcheck.php
+
+      - name: Confirm ignored runtime output
+        run: test -z "$(git status --short)"
