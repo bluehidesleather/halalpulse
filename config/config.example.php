@@ -26,6 +26,8 @@ return [
         'user' => 'halalpulse',
         'password' => '',
         'charset' => 'utf8mb4',
+        // Named zones are not always installed on shared MySQL; use the India market offset.
+        'session_timezone' => '+05:30',
     ],
     'polling' => [
         'nse_interval_seconds' => 3600,

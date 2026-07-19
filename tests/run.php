@@ -10,8 +10,10 @@ use HalalPulse\Ingestion\QuarterlyResultClassifier;
 use HalalPulse\Auth\PasswordPolicy;
 use HalalPulse\Auth\PasswordHasher;
 use HalalPulse\Auth\UserRepository;
+use HalalPulse\Database;
 use HalalPulse\Support\OfficialUrl;
 use HalalPulse\Web\Page;
+use HalalPulse\Web\TransportSecurity;
 use HalalPulse\Documents\DocumentQueueItem;
 use HalalPulse\Documents\MetricCandidateExtractor;
 use HalalPulse\Documents\OfficialDocumentDownloader;
@@ -66,6 +68,16 @@ $makeFiling = static function (string $subject, string $category = 'Corporate An
         rawPayload: ['subject' => $subject],
     );
 };
+
+$assert(TransportSecurity::isSecure(['HTTPS' => 'on']), 'HTTPS transport is recognized from the server HTTPS flag.');
+$assert(TransportSecurity::isSecure(['SERVER_PORT' => '443']), 'HTTPS transport is recognized from the direct TLS port.');
+$assert(!TransportSecurity::isSecure(['HTTPS' => 'off', 'SERVER_PORT' => '80']), 'Plain HTTP is rejected when HTTPS enforcement is enabled.');
+$assert(!TransportSecurity::isSecure(['HTTP_X_FORWARDED_PROTO' => 'https', 'SERVER_PORT' => '80']), 'An untrusted forwarded-protocol header cannot bypass HTTPS enforcement.');
+$assert(Database::isValidTimezoneOffset('+05:30'), 'The India market UTC offset is accepted for MySQL sessions.');
+$assert(Database::isValidTimezoneOffset('-13:59'), 'The minimum supported MySQL UTC offset is accepted.');
+$assert(!Database::isValidTimezoneOffset('-14:00'), 'A negative UTC offset below the MySQL boundary is rejected.');
+$assert(!Database::isValidTimezoneOffset('+14:01'), 'A UTC offset beyond the MySQL boundary is rejected.');
+$assert(!Database::isValidTimezoneOffset('Asia/Kolkata'), 'A named zone is rejected because shared-host MySQL zone tables may be unavailable.');
 
 $strong = $classifier->classify($makeFiling(
     'Unaudited standalone and consolidated financial results for the quarter ended June 30, 2026'
@@ -163,6 +175,15 @@ if (extension_loaded('dom')) {
     $assert($sebiResult->sourceRows === 2, 'Official listing mapper counts every matching synthetic link.');
     $assert(count($sebiResult->announcements) === 1, 'Official listing mapper rejects a matching path on a third-party host.');
     $assert($sebiResult->announcements[0]->publishedAt->format('Y-m-d') === '2026-07-19', 'Official listing mapper extracts its nearby publication date.');
+
+    $numericDateResult = (new OfficialListingMapper(
+        source: 'SEBI',
+        baseUrl: 'https://www.sebi.gov.in/sebiweb/home/HomeAction.do',
+        category: 'Press release',
+        requiredMarkers: ['SEBI', 'Press Releases'],
+        linkPathContains: ['/media/press-releases/'],
+    ))->map('<html><head><title>SEBI Press Releases</title></head><body><div>07/08/2026 <a href="/media/press-releases/aug-2026/synthetic_00002.html">Synthetic numeric-date release</a></div></body></html>');
+    $assert($numericDateResult->announcements[0]->publishedAt->format('Y-m-d') === '2026-08-07', 'Numeric official-listing dates are parsed strictly as day/month/year.');
 } else {
     $assert(false, 'Government parsers require the PHP DOM extension.');
 }

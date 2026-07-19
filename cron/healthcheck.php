@@ -50,6 +50,8 @@ try {
     $pdo = Database::connect($config);
     $pdo->query('SELECT 1')->fetchColumn();
     $checks['database'] = true;
+    $checks['database_timezone'] = (string) $pdo->query('SELECT @@session.time_zone')->fetchColumn()
+        === (string) $config->get('database.session_timezone', '+05:30');
     $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
     $checks['users_table'] = true;
     $pdo->query('SELECT COUNT(*) FROM login_attempts')->fetchColumn();
@@ -92,6 +94,7 @@ try {
     $checks['alert_delivery_attempts_table'] = true;
 } catch (Throwable $exception) {
     $checks['database'] = false;
+    $checks['database_timezone'] ??= false;
     $checks['users_table'] ??= false;
     $checks['login_attempts_table'] ??= false;
     $checks['filing_documents_table'] ??= false;

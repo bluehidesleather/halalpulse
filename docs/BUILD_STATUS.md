@@ -16,6 +16,8 @@ Repository target: `bluehidesleather/halalpulse`
 ## Completed through this checkpoint
 
 - Secure application bootstrap and configuration reader.
+- Fail-closed web transport: plain HTTP is refused before session startup, HTTPS emits HSTS, and unhandled setup errors are replaced by a generic browser reference.
+- Every PDO connection sets and verifies an explicit `+05:30` MySQL session offset, avoiding shared-host server-time drift in checkpoints, reviews, and alerts.
 - PDO database connection factory.
 - Normalized NSE/BSE filing value object and source-adapter contract.
 - Duplicate-safe filing storage with raw payload hashing.
@@ -39,6 +41,7 @@ Repository target: `bluehidesleather/halalpulse`
 - Searchable/filterable filings ledger with paginated results and official attachment links.
 - Account-security page for verified password changes.
 - Apache/LiteSpeed web-root hardening and a no-inline-script content security policy.
+- Private-site indexing controls: deny-all `robots.txt` plus `X-Robots-Tag` on application, error, document, and static responses.
 - Restart-safe filing-document queue with stale-run recovery and a MySQL advisory lock.
 - Official-host-only PDF client with hard time/byte limits, signature validation, atomic private storage, and SHA-256 metadata.
 - Private downloaded document bytes are explicitly ignored by Git; only the empty directory marker is packaged.
@@ -65,6 +68,7 @@ Repository target: `bluehidesleather/halalpulse`
 - Append-only factor, valuation, risk, and score snapshots with superseded review history and administrator attribution.
 - Protected potential queue and company scorecard workbench; alert eligibility remains separate from provider submission.
 - Source-specific PIB and RBI RSS adapters plus marker-checked SEBI, MCA, and Union Budget listing adapters.
+- Government HTML listing dates use strict, non-ambiguous day/month/year parsing for Indian numeric publication dates.
 - Dedicated government-source HTTPS allowlist, no redirects, bounded response sizes, one-hour checkpoint, and per-source MySQL advisory locks.
 - Disabled-by-default production-host probe and hourly polling commands; one source failure cannot block the others.
 - Immutable announcement records with official URL, normalized raw payload, SHA-256 identity, classifier suggestion, and poll audit history.
@@ -84,7 +88,8 @@ Repository target: `bluehidesleather/halalpulse`
 
 ## Validation completed
 
-- All 121 PHP files passed grammar parsing.
+- All 122 PHP files passed both independent grammar parsing and a real PHP 8.3 syntax sweep.
+- The dependency-free PHP 8.3 suite passes all 99 classifier, source-contract, transport, authentication, document, Sharia, scoring, and Telegram checks.
 - All six JSON policy, methodology, and exchange-adapter fixtures passed strict decoding; synthetic RSS/HTML government fixtures were also added.
 - CSS delimiter and static internal-link checks passed.
 - The full schema contains 24 non-duplicate tables; Telegram recipient/delivery fields and migration `008_telegram_alerts.sql` passed structural checks.

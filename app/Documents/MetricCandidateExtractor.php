@@ -33,7 +33,7 @@ final class MetricCandidateExtractor
             }
 
             foreach (self::PATTERNS as $metricKey => $pattern) {
-                if (isset($seen[$metricKey]) || preg_match('/' . $pattern . '/iu', $line) !== 1) {
+                if (isset($seen[$metricKey]) || preg_match('~' . $pattern . '~iu', $line) !== 1) {
                     continue;
                 }
 

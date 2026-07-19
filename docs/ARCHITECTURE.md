@@ -36,6 +36,7 @@ The current client performs one attempt per scheduled exchange request. It allow
 
 - Web root is `public_html/`; application, configuration, storage, and SQL remain outside it.
 - Real configuration is `config/config.local.php`, excluded from Git.
+- PHP and exchange timestamps use India market time; every PDO connection explicitly sets MySQL session time to `+05:30` because shared hosts may use a different server timezone or lack named-zone tables.
 - Secrets must never appear in code, logs, database dumps, pull requests, or screenshots.
 - Production logs are JSON lines with restricted filesystem permissions and must not contain credentials or full raw HTTP headers.
 - The website is private by default. Every application page except the login form requires an active administrator session.

@@ -51,5 +51,6 @@ header('Content-Length: ' . (int) filesize($path));
 header('Cache-Control: private, no-store, max-age=0');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: SAMEORIGIN');
+header('X-Robots-Tag: noindex, nofollow, noarchive');
 readfile($path);
 exit;
