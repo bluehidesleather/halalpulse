@@ -24,7 +24,7 @@ Do not enable live polling or Telegram delivery until every applicable gate belo
 ## 3. Private configuration and database
 
 1. Copy `config/config.example.php` to the ignored `config/config.local.php`.
-2. Set the real database host, port, name, user, and password only in the local file.
+2. Set the real database host, port, name, user, and password only in the local file. Keep `database.session_timezone` at `+05:30` unless the entire India-market timestamp model is deliberately changed.
 3. Generate a stable application key:
 
    ```sh

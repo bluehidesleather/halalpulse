@@ -17,6 +17,7 @@ Repository target: `bluehidesleather/halalpulse`
 
 - Secure application bootstrap and configuration reader.
 - Fail-closed web transport: plain HTTP is refused before session startup, HTTPS emits HSTS, and unhandled setup errors are replaced by a generic browser reference.
+- Every PDO connection sets and verifies an explicit `+05:30` MySQL session offset, avoiding shared-host server-time drift in checkpoints, reviews, and alerts.
 - PDO database connection factory.
 - Normalized NSE/BSE filing value object and source-adapter contract.
 - Duplicate-safe filing storage with raw payload hashing.

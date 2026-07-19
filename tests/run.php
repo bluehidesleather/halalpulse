@@ -10,6 +10,7 @@ use HalalPulse\Ingestion\QuarterlyResultClassifier;
 use HalalPulse\Auth\PasswordPolicy;
 use HalalPulse\Auth\PasswordHasher;
 use HalalPulse\Auth\UserRepository;
+use HalalPulse\Database;
 use HalalPulse\Support\OfficialUrl;
 use HalalPulse\Web\Page;
 use HalalPulse\Web\TransportSecurity;
@@ -72,6 +73,11 @@ $assert(TransportSecurity::isSecure(['HTTPS' => 'on']), 'HTTPS transport is reco
 $assert(TransportSecurity::isSecure(['SERVER_PORT' => '443']), 'HTTPS transport is recognized from the direct TLS port.');
 $assert(!TransportSecurity::isSecure(['HTTPS' => 'off', 'SERVER_PORT' => '80']), 'Plain HTTP is rejected when HTTPS enforcement is enabled.');
 $assert(!TransportSecurity::isSecure(['HTTP_X_FORWARDED_PROTO' => 'https', 'SERVER_PORT' => '80']), 'An untrusted forwarded-protocol header cannot bypass HTTPS enforcement.');
+$assert(Database::isValidTimezoneOffset('+05:30'), 'The India market UTC offset is accepted for MySQL sessions.');
+$assert(Database::isValidTimezoneOffset('-13:59'), 'The minimum supported MySQL UTC offset is accepted.');
+$assert(!Database::isValidTimezoneOffset('-14:00'), 'A negative UTC offset below the MySQL boundary is rejected.');
+$assert(!Database::isValidTimezoneOffset('+14:01'), 'A UTC offset beyond the MySQL boundary is rejected.');
+$assert(!Database::isValidTimezoneOffset('Asia/Kolkata'), 'A named zone is rejected because shared-host MySQL zone tables may be unavailable.');
 
 $strong = $classifier->classify($makeFiling(
     'Unaudited standalone and consolidated financial results for the quarter ended June 30, 2026'
