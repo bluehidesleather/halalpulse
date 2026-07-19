@@ -1,0 +1,46 @@
+{
+  "version": "REPLACE-WITH-REVIEWED-VERSION",
+  "name": "HalalPulse personal multibagger research methodology",
+  "effective_date": "2026-07-19",
+  "verified_by": "REPLACE-WITH-REVIEWER",
+  "verification_note": "Replace this note after reviewing factor definitions, weights, market-cap bands, valuation assumptions, and evidence requirements.",
+  "approved_for_use": false,
+  "grade_direction": "1_best_10_weakest",
+  "alert_max_score": 4,
+  "graham_coefficient": "22.5",
+  "valuation_required": true,
+  "factors": [
+    {"key": "piotroski_f_score", "label": "Piotroski F-Score", "description": "Nine-signal historical financial-strength review with the underlying statements retained as evidence.", "weight_percent": 12, "required": true},
+    {"key": "intrinsic_value", "label": "Graham and DCF valuation", "description": "Review both methods; label undervalued only when current price is no higher than both values.", "weight_percent": 12, "required": true},
+    {"key": "returns_quality", "label": "ROE and ROCE", "description": "Review return on equity, return on capital employed, persistence, and capital intensity.", "weight_percent": 10, "required": true},
+    {"key": "growth_consistency", "label": "Revenue and profit growth", "description": "Review at least three years when available, including CAGR, yearly consistency, and margin compression.", "weight_percent": 10, "required": true},
+    {"key": "margin_trend", "label": "Operating margin trend", "description": "Review EBITDA margin level, direction, and negative-operating-profit risk.", "weight_percent": 8, "required": true},
+    {"key": "debt_quality", "label": "Debt quality", "description": "Review debt-to-equity, interest coverage, debt direction, and available secured/unsecured composition.", "weight_percent": 8, "required": true},
+    {"key": "cash_flow_quality", "label": "Cash-flow quality", "description": "Review operating cash flow versus profit, free cash flow, capital expenditure, and cash conversion.", "weight_percent": 8, "required": true},
+    {"key": "working_capital", "label": "Working-capital efficiency", "description": "Review current and quick ratios, debtor days, inventory days, and their trends.", "weight_percent": 6, "required": true},
+    {"key": "promoter_quality", "label": "Promoter quality", "description": "Review promoter holding and direction, pledge, dilution, and disclosed governance evidence.", "weight_percent": 8, "required": true},
+    {"key": "institutional_trend", "label": "Institutional ownership trend", "description": "Review FII and DII direction without penalizing an otherwise strong microcap solely for zero institutional ownership.", "weight_percent": 6, "required": true},
+    {"key": "macro_tailwind", "label": "Official macro tailwind", "description": "Use PIB, SEBI, RBI, MCA, or Union Budget evidence only; do not use media or social posts.", "weight_percent": 6, "required": true},
+    {"key": "valuation_ratios", "label": "Relative valuation ratios", "description": "Review PE versus sector, price-to-book, EV/EBITDA, PEG, and data comparability.", "weight_percent": 6, "required": true}
+  ],
+  "market_cap_bands_crore": {"large_min": "20000", "mid_min": "5000", "small_min": "500", "micro_min": "50"},
+  "microcap_adjustments": {
+    "applies_below_crore": "500",
+    "red_flag_points": 2,
+    "green_flag_points": 1,
+    "red_flags": [
+      {"key": "illiquid_or_circuit_risk", "label": "Illiquidity or repeated circuit risk"},
+      {"key": "auditor_risk", "label": "Auditor change, qualification, or quality concern"},
+      {"key": "related_party_risk", "label": "High related-party transactions, loans, or advances"},
+      {"key": "customer_concentration", "label": "Material customer concentration"},
+      {"key": "profit_cash_divergence", "label": "Reported profit is not supported by cash"},
+      {"key": "share_dilution", "label": "Material or repeated share dilution"},
+      {"key": "limited_listing_history", "label": "Limited listed-company track record"}
+    ],
+    "green_flags": [
+      {"key": "early_stage_growth", "label": "Early-stage revenue with strong evidenced growth"},
+      {"key": "niche_entry_barriers", "label": "Niche sector with evidenced entry barriers"},
+      {"key": "pre_discovery_fundamentals", "label": "Strong fundamentals before institutional discovery"}
+    ]
+  }
+}

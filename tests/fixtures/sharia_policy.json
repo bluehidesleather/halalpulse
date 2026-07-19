@@ -1,0 +1,29 @@
+{
+  "version": "synthetic-test-v1",
+  "name": "Synthetic test policy — not religious guidance",
+  "authority_name": "Synthetic test authority",
+  "authority_standard": "Test fixture only",
+  "authority_reference_url": "https://example.test/synthetic-policy",
+  "effective_date": "2026-01-01",
+  "verified_by": "Automated test fixture",
+  "verification_note": "Made-up thresholds used only to verify software boundary behavior.",
+  "approved_for_use": true,
+  "ratios": [
+    {
+      "key": "synthetic_debt_ratio",
+      "label": "Synthetic debt ratio",
+      "numerator_key": "test_debt",
+      "denominator_key": "test_reference_value",
+      "max_percent": "40",
+      "required": true
+    },
+    {
+      "key": "synthetic_income_ratio",
+      "label": "Synthetic income ratio",
+      "numerator_key": "test_flagged_income",
+      "denominator_key": "test_total_revenue",
+      "max_percent": "10",
+      "required": true
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "version": "synthetic-score-test-v1",
+  "name": "Synthetic score methodology — not investment guidance",
+  "effective_date": "2026-07-19",
+  "verified_by": "Automated test fixture",
+  "verification_note": "Made-up factor weights and flags used only for deterministic software tests.",
+  "approved_for_use": true,
+  "grade_direction": "1_best_10_weakest",
+  "alert_max_score": 4,
+  "graham_coefficient": "22.5",
+  "valuation_required": true,
+  "factors": [
+    {"key": "financial_strength", "label": "Synthetic financial strength", "description": "Synthetic evidence factor for automated tests only.", "weight_percent": 50, "required": true},
+    {"key": "macro_tailwind", "label": "Synthetic official macro factor", "description": "Synthetic government-source factor for automated tests only.", "weight_percent": 50, "required": true}
+  ],
+  "market_cap_bands_crore": {"large_min": "20000", "mid_min": "5000", "small_min": "500", "micro_min": "50"},
+  "microcap_adjustments": {
+    "applies_below_crore": "500",
+    "red_flag_points": 2,
+    "green_flag_points": 1,
+    "red_flags": [{"key": "synthetic_red", "label": "Synthetic red flag"}],
+    "green_flags": [{"key": "synthetic_green", "label": "Synthetic green flag"}]
+  }
+}

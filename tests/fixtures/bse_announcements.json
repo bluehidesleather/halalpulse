@@ -1,0 +1,32 @@
+{
+  "Table": [
+    {
+      "NEWSID": "SYNTHETIC-BSE-001",
+      "SCRIP_CD": "900001",
+      "SLONGNAME": "Example Components Limited",
+      "CATEGORYNAME": "Company Update",
+      "NEWSSUB": "Unaudited financial results for the quarter ended June 30, 2026",
+      "NEWS_DT": "2026-07-19T14:45:00",
+      "ATTACHMENTNAME": "SYNTHETIC_EXAMPLE_RESULT.pdf"
+    },
+    {
+      "SCRIP_CD": 900002,
+      "SLONGNAME": "Fixture Services Limited",
+      "CATEGORYNAME": "Corporate Announcement",
+      "HEADLINE": "Outcome of board meeting and financial results",
+      "NEWS_DT": "19-Jul-2026 11:20:00",
+      "NSURL": "https://www.bseindia.com/xml-data/corpfiling/AttachLive/SYNTHETIC_FIXTURE_RESULT.pdf"
+    },
+    {
+      "NEWSID": "SYNTHETIC-BSE-BAD",
+      "SCRIP_CD": "900003",
+      "SLONGNAME": "Incomplete Fixture Limited",
+      "NEWS_DT": "not-a-date"
+    }
+  ],
+  "Table1": [
+    {
+      "ROWCNT": 3
+    }
+  ]
+}
