@@ -88,7 +88,8 @@ Repository target: `bluehidesleather/halalpulse`
 
 ## Validation completed
 
-- All 121 PHP files passed grammar parsing.
+- All 122 PHP files passed both independent grammar parsing and a real PHP 8.3 syntax sweep.
+- The dependency-free PHP 8.3 suite passes all 99 classifier, source-contract, transport, authentication, document, Sharia, scoring, and Telegram checks.
 - All six JSON policy, methodology, and exchange-adapter fixtures passed strict decoding; synthetic RSS/HTML government fixtures were also added.
 - CSS delimiter and static internal-link checks passed.
 - The full schema contains 24 non-duplicate tables; Telegram recipient/delivery fields and migration `008_telegram_alerts.sql` passed structural checks.
