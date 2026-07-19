@@ -175,6 +175,15 @@ if (extension_loaded('dom')) {
     $assert($sebiResult->sourceRows === 2, 'Official listing mapper counts every matching synthetic link.');
     $assert(count($sebiResult->announcements) === 1, 'Official listing mapper rejects a matching path on a third-party host.');
     $assert($sebiResult->announcements[0]->publishedAt->format('Y-m-d') === '2026-07-19', 'Official listing mapper extracts its nearby publication date.');
+
+    $numericDateResult = (new OfficialListingMapper(
+        source: 'SEBI',
+        baseUrl: 'https://www.sebi.gov.in/sebiweb/home/HomeAction.do',
+        category: 'Press release',
+        requiredMarkers: ['SEBI', 'Press Releases'],
+        linkPathContains: ['/media/press-releases/'],
+    ))->map('<html><head><title>SEBI Press Releases</title></head><body><div>07/08/2026 <a href="/media/press-releases/aug-2026/synthetic_00002.html">Synthetic numeric-date release</a></div></body></html>');
+    $assert($numericDateResult->announcements[0]->publishedAt->format('Y-m-d') === '2026-08-07', 'Numeric official-listing dates are parsed strictly as day/month/year.');
 } else {
     $assert(false, 'Government parsers require the PHP DOM extension.');
 }

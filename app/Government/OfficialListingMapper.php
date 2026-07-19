@@ -146,19 +146,23 @@ final readonly class OfficialListingMapper
     {
         $context = trim((string) preg_replace('/\s+/u', ' ', $context));
         $patterns = [
-            '/\b(\d{1,2}\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{4})\b/i',
-            '/\b((?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{4})\b/i',
-            '/\b(\d{4}-\d{2}-\d{2})\b/',
-            '/\b(\d{2}[\/-]\d{2}[\/-]\d{4})\b/',
+            ['/\b(\d{1,2}\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{4})\b/i', ['!j M Y', '!j F Y']],
+            ['/\b((?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},?\s+\d{4})\b/i', ['!M j Y', '!F j Y']],
+            ['/\b(\d{4}-\d{2}-\d{2})\b/', ['!Y-m-d']],
+            ['/\b(\d{2}\/\d{2}\/\d{4})\b/', ['!d/m/Y']],
+            ['/\b(\d{2}-\d{2}-\d{4})\b/', ['!d-m-Y']],
         ];
-        foreach ($patterns as $pattern) {
+        foreach ($patterns as [$pattern, $formats]) {
             if (preg_match($pattern, $context, $match) !== 1) {
                 continue;
             }
-            try {
-                return new DateTimeImmutable($match[1]);
-            } catch (Throwable) {
-                continue;
+            $candidate = trim(str_replace(',', '', $match[1]));
+            foreach ($formats as $format) {
+                $date = DateTimeImmutable::createFromFormat($format, $candidate);
+                $errors = DateTimeImmutable::getLastErrors();
+                if ($date !== false && ($errors === false || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))) {
+                    return $date;
+                }
             }
         }
         return null;

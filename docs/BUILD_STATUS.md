@@ -67,6 +67,7 @@ Repository target: `bluehidesleather/halalpulse`
 - Append-only factor, valuation, risk, and score snapshots with superseded review history and administrator attribution.
 - Protected potential queue and company scorecard workbench; alert eligibility remains separate from provider submission.
 - Source-specific PIB and RBI RSS adapters plus marker-checked SEBI, MCA, and Union Budget listing adapters.
+- Government HTML listing dates use strict, non-ambiguous day/month/year parsing for Indian numeric publication dates.
 - Dedicated government-source HTTPS allowlist, no redirects, bounded response sizes, one-hour checkpoint, and per-source MySQL advisory locks.
 - Disabled-by-default production-host probe and hourly polling commands; one source failure cannot block the others.
 - Immutable announcement records with official URL, normalized raw payload, SHA-256 identity, classifier suggestion, and poll audit history.
