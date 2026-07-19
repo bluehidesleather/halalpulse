@@ -43,6 +43,8 @@ An attacker who only reaches the website cannot trigger a reset email, enumerate
 - Only HMAC hashes of the normalized email and remote address are stored for throttling; logs contain a short hash prefix or user ID, never credentials.
 - Passwords require 12 to 128 characters and use Argon2id where available.
 - Session IDs regenerate on login and password change.
+- When `app.force_https` is enabled, PHP refuses every non-TLS web request before a session starts or credentials can be submitted. Successful HTTPS responses emit a one-year HSTS policy. The check deliberately does not trust a client-supplied `X-Forwarded-Proto` header.
+- Unhandled setup and database exceptions render a generic reference code in the browser; class and file location are written only to the private server error log.
 - Cookies are session-only, host-only, `Secure`, `HttpOnly`, and `SameSite=Strict`.
 - Sessions expire after 30 minutes of inactivity or 12 hours total by default.
 - Every state-changing form verifies a 256-bit CSRF token.

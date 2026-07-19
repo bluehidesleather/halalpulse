@@ -12,6 +12,7 @@ use HalalPulse\Auth\PasswordHasher;
 use HalalPulse\Auth\UserRepository;
 use HalalPulse\Support\OfficialUrl;
 use HalalPulse\Web\Page;
+use HalalPulse\Web\TransportSecurity;
 use HalalPulse\Documents\DocumentQueueItem;
 use HalalPulse\Documents\MetricCandidateExtractor;
 use HalalPulse\Documents\OfficialDocumentDownloader;
@@ -66,6 +67,11 @@ $makeFiling = static function (string $subject, string $category = 'Corporate An
         rawPayload: ['subject' => $subject],
     );
 };
+
+$assert(TransportSecurity::isSecure(['HTTPS' => 'on']), 'HTTPS transport is recognized from the server HTTPS flag.');
+$assert(TransportSecurity::isSecure(['SERVER_PORT' => '443']), 'HTTPS transport is recognized from the direct TLS port.');
+$assert(!TransportSecurity::isSecure(['HTTPS' => 'off', 'SERVER_PORT' => '80']), 'Plain HTTP is rejected when HTTPS enforcement is enabled.');
+$assert(!TransportSecurity::isSecure(['HTTP_X_FORWARDED_PROTO' => 'https', 'SERVER_PORT' => '80']), 'An untrusted forwarded-protocol header cannot bypass HTTPS enforcement.');
 
 $strong = $classifier->classify($makeFiling(
     'Unaudited standalone and consolidated financial results for the quarter ended June 30, 2026'
