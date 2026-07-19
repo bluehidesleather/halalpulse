@@ -41,6 +41,7 @@ Repository target: `bluehidesleather/halalpulse`
 - Searchable/filterable filings ledger with paginated results and official attachment links.
 - Account-security page for verified password changes.
 - Apache/LiteSpeed web-root hardening and a no-inline-script content security policy.
+- Private-site indexing controls: deny-all `robots.txt` plus `X-Robots-Tag` on application, error, document, and static responses.
 - Restart-safe filing-document queue with stale-run recovery and a MySQL advisory lock.
 - Official-host-only PDF client with hard time/byte limits, signature validation, atomic private storage, and SHA-256 metadata.
 - Private downloaded document bytes are explicitly ignored by Git; only the empty directory marker is packaged.

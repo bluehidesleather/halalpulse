@@ -29,6 +29,7 @@ final class TransportSecurity
             header('Content-Type: text/plain; charset=UTF-8');
             header('Cache-Control: no-store, max-age=0');
             header('X-Content-Type-Options: nosniff');
+            header('X-Robots-Tag: noindex, nofollow, noarchive');
             header('Content-Security-Policy: default-src \'none\'; frame-ancestors \'none\'');
             exit("HTTPS is required. Open this address using https:// and try again.\n");
         }

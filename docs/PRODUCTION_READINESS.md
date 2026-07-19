@@ -20,6 +20,7 @@ Do not enable live polling or Telegram delivery until every applicable gate belo
 - [ ] `storage/logs`, `storage/cache`, `storage/tmp`, and `storage/documents` are writable by the PHP/cron account and are not web-accessible.
 - [ ] HTTPS is active before the first login and `app.force_https` remains `true`; confirm an `http://` request is refused and an `https://` response includes `Strict-Transport-Security`.
 - [ ] Directory listing is disabled and the supplied `public_html/.htaccess` is effective.
+- [ ] `robots.txt` disallows all crawling and authenticated/login responses include `X-Robots-Tag: noindex, nofollow, noarchive`.
 
 ## 3. Private configuration and database
 

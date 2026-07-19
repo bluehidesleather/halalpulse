@@ -47,6 +47,7 @@ if ($isWebRequest) {
             header('Cache-Control: no-store, max-age=0');
             header('X-Content-Type-Options: nosniff');
             header('X-Frame-Options: DENY');
+            header('X-Robots-Tag: noindex, nofollow, noarchive');
             header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'");
         }
 
