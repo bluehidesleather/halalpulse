@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xbrli:xbrl
+    xmlns:xbrli="http://www.xbrl.org/2003/instance"
+    xmlns:link="http://www.xbrl.org/2003/linkbase"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:in-fi="https://www.sebi.gov.in/xbrl/2026-04-01/in-fi">
+  <link:schemaRef xlink:type="simple" xlink:href="https://www.sebi.gov.in/xbrl/2026-04-01/in-fi/in-fi.xsd"/>
+  <xbrli:context id="OneD"><xbrli:entity><xbrli:identifier scheme="http://www.mca.gov.in/CIN">SYNTHETIC</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2026-06-30</xbrli:instant></xbrli:period></xbrli:context>
+  <xbrli:context id="PriorD"><xbrli:entity><xbrli:identifier scheme="http://www.mca.gov.in/CIN">SYNTHETIC</xbrli:identifier></xbrli:entity><xbrli:period><xbrli:instant>2025-06-30</xbrli:instant></xbrli:period></xbrli:context>
+  <xbrli:unit id="INR"><xbrli:measure>iso4217:INR</xbrli:measure></xbrli:unit>
+  <in-fi:ScripCode contextRef="OneD">123456</in-fi:ScripCode>
+  <in-fi:Symbol contextRef="OneD">DEMO</in-fi:Symbol>
+  <in-fi:ISIN contextRef="OneD">INE000A01001</in-fi:ISIN>
+  <in-fi:NameOfTheCompany contextRef="OneD">Demonstration Limited</in-fi:NameOfTheCompany>
+  <in-fi:TypeOfCompany contextRef="OneD">Non-banking company</in-fi:TypeOfCompany>
+  <in-fi:ClassOfSecurity contextRef="OneD">Equity</in-fi:ClassOfSecurity>
+  <in-fi:DateOfStartOfFinancialYear contextRef="OneD">2026-04-01</in-fi:DateOfStartOfFinancialYear>
+  <in-fi:DateOfEndOfFinancialYear contextRef="OneD">2027-03-31</in-fi:DateOfEndOfFinancialYear>
+  <in-fi:DateOfStartOfReportingPeriod contextRef="OneD">2026-04-01</in-fi:DateOfStartOfReportingPeriod>
+  <in-fi:DateOfEndOfReportingPeriod contextRef="OneD">2026-06-30</in-fi:DateOfEndOfReportingPeriod>
+  <in-fi:TypeOfReportingPeriod contextRef="OneD">Quarterly</in-fi:TypeOfReportingPeriod>
+  <in-fi:ReportingQuarter contextRef="OneD">First quarter</in-fi:ReportingQuarter>
+  <in-fi:WhetherResultsAreAuditedOrUnaudited contextRef="OneD">Unaudited</in-fi:WhetherResultsAreAuditedOrUnaudited>
+  <in-fi:NatureOfReportStandaloneConsolidated contextRef="OneD">Standalone</in-fi:NatureOfReportStandaloneConsolidated>
+  <in-fi:DescriptionOfPresentationCurrency contextRef="OneD">INR</in-fi:DescriptionOfPresentationCurrency>
+  <in-fi:LevelOfRounding contextRef="OneD">Lakhs</in-fi:LevelOfRounding>
+  <in-fi:DateOfBoardMeetingWhenFinancialResultsWereApproved contextRef="OneD">2026-07-19</in-fi:DateOfBoardMeetingWhenFinancialResultsWereApproved>
+  <in-fi:RevenueFromOperations contextRef="PriorD" unitRef="INR" decimals="0">999</in-fi:RevenueFromOperations>
+  <in-fi:RevenueFromOperations contextRef="OneD" unitRef="INR" decimals="0">12505000000</in-fi:RevenueFromOperations>
+  <in-fi:OtherIncome contextRef="OneD" unitRef="INR" decimals="0">100000000</in-fi:OtherIncome>
+  <in-fi:Income contextRef="OneD" unitRef="INR" decimals="0">12605000000</in-fi:Income>
+  <in-fi:Expenses contextRef="OneD" unitRef="INR" decimals="0">9700000000</in-fi:Expenses>
+  <in-fi:ProfitBeforeTax contextRef="OneD" unitRef="INR" decimals="0">2905000000</in-fi:ProfitBeforeTax>
+  <in-fi:TaxExpense contextRef="OneD" unitRef="INR" decimals="0">705000000</in-fi:TaxExpense>
+  <in-fi:ProfitLossForPeriod contextRef="OneD" unitRef="INR" decimals="0">2200000000</in-fi:ProfitLossForPeriod>
+  <in-fi:BasicEarningsPerShare contextRef="OneD" decimals="2">12.3400</in-fi:BasicEarningsPerShare>
+  <in-fi:DilutedEarningsPerShare contextRef="OneD" decimals="2">12.30</in-fi:DilutedEarningsPerShare>
+  <in-fi:DebtEquityRatio contextRef="OneD" decimals="2">0.450</in-fi:DebtEquityRatio>
+</xbrli:xbrl>

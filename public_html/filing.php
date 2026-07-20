@@ -28,6 +28,7 @@ if ($filing === null) {
 
 $documentId = (int) ($filing['document_id'] ?? 0);
 $metrics = $documentId > 0 ? $app->documents->metricsForDocument($documentId) : [];
+$structuredResult = $app->documents->financialResultForFiling($filingId);
 $attachmentUrl = is_string($filing['attachment_url']) && str_starts_with($filing['attachment_url'], 'https://')
     ? $filing['attachment_url']
     : null;
@@ -38,6 +39,20 @@ $metricLabels = [
     'profit_before_tax' => 'Profit before tax',
     'net_profit' => 'Net profit',
     'eps' => 'Earnings per share',
+];
+$structuredMetricLabels = [
+    'revenue_from_operations' => 'Revenue from operations',
+    'other_income' => 'Other income',
+    'total_income' => 'Total income',
+    'finance_costs' => 'Finance costs',
+    'total_expenses' => 'Total expenses',
+    'profit_before_tax' => 'Profit before tax',
+    'tax_expense' => 'Tax expense',
+    'profit_for_period' => 'Profit for period',
+    'profit_attributable_to_owners' => 'Profit attributable to owners',
+    'basic_eps' => 'Basic EPS',
+    'diluted_eps' => 'Diluted EPS',
+    'debt_equity_ratio' => 'Debt/equity ratio',
 ];
 
 Page::begin(
@@ -89,6 +104,35 @@ Page::begin(
         <?php endif; ?>
     </aside>
 </section>
+
+<?php if ($structuredResult !== null): ?>
+<section class="panel structured-result-panel">
+    <div class="panel-heading">
+        <div><p class="eyebrow">Exchange-submitted XBRL</p><h2>Structured financial result</h2></div>
+        <span class="status status-processed"><?= Page::escape(ucfirst((string) $structuredResult['filing_type'])) ?></span>
+    </div>
+    <div class="result-meta">
+        <span><?= Page::escape(ucfirst((string) $structuredResult['statement_scope'])) ?></span>
+        <span><?= Page::escape($structuredResult['reporting_quarter'] ?? $structuredResult['reporting_period_type'] ?? 'Period not stated') ?></span>
+        <span>Ended <?= Page::escape($structuredResult['period_end']) ?></span>
+        <span><?= Page::escape($structuredResult['audit_status'] ?? 'Audit status not stated') ?></span>
+        <span><?= Page::escape($structuredResult['currency']) ?> · <?= Page::escape($structuredResult['rounding_level'] ?? 'source units') ?></span>
+    </div>
+    <div class="structured-metric-grid">
+        <?php foreach ($structuredMetricLabels as $key => $label): ?>
+            <?php if ($structuredResult[$key] !== null): ?>
+                <article><span><?= Page::escape($label) ?></span><strong><?= Page::escape($structuredResult[$key]) ?></strong></article>
+            <?php endif; ?>
+        <?php endforeach; ?>
+    </div>
+    <dl class="detail-list detail-list-wide result-integrity">
+        <div><dt>Board approval</dt><dd><?= Page::escape($structuredResult['board_approval_date'] ?? '—') ?></dd></div>
+        <div><dt>XBRL SHA-256</dt><dd class="mono hash-value"><?= Page::escape($structuredResult['xbrl_sha256']) ?></dd></div>
+        <div><dt>Taxonomy</dt><dd class="mono hash-value"><?= Page::escape($structuredResult['taxonomy_uri'] ?? '—') ?></dd></div>
+    </dl>
+    <div class="notice-card"><strong>Primary-source data, not an investment conclusion</strong><p>These values are parsed from the archived official XBRL and preserve its submitted units. They do not create a Sharia decision or potential score without the separate reviewed evidence gates.</p></div>
+</section>
+<?php endif; ?>
 
 <section class="panel metric-review-panel">
     <div class="panel-heading"><div><p class="eyebrow">Human validation gate</p><h2>Financial metric candidates</h2></div><span class="status"><?= Page::escape(count($metrics)) ?> detected</span></div>

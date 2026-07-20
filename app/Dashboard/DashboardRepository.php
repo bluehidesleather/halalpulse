@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace HalalPulse\Dashboard;
 
 use PDO;
+use Throwable;
 
 final class DashboardRepository
 {
@@ -83,6 +84,59 @@ final class DashboardRepository
         );
 
         return $statement->fetchAll();
+    }
+
+    /**
+     * @return array{
+     *   available: bool, last_run_status: ?string, last_run_at: ?string,
+     *   feed_last_build_at: ?string, processed: int, failed: int, pending: int,
+     *   manual_request_status: ?string
+     * }
+     */
+    public function nseIntegratedStatus(): array
+    {
+        try {
+            $row = $this->pdo->query(
+                <<<'SQL'
+                SELECT
+                    (SELECT status FROM nse_integrated_sync_runs ORDER BY id DESC LIMIT 1) AS last_run_status,
+                    (SELECT started_at FROM nse_integrated_sync_runs ORDER BY id DESC LIMIT 1) AS last_run_at,
+                    (SELECT feed_last_build_at FROM nse_integrated_sync_runs ORDER BY id DESC LIMIT 1) AS feed_last_build_at,
+                    (SELECT COUNT(*) FROM nse_integrated_feed_items WHERE status = 'processed') AS processed,
+                    (SELECT COUNT(*) FROM nse_integrated_feed_items WHERE status = 'failed') AS failed,
+                    (SELECT COUNT(*) FROM nse_integrated_feed_items WHERE status IN ('pending', 'processing')) AS pending,
+                    (
+                        SELECT status FROM nse_sync_requests
+                        WHERE source_key = 'nse_integrated_rss'
+                        ORDER BY id DESC LIMIT 1
+                    ) AS manual_request_status
+                SQL
+            )->fetch();
+
+            return [
+                'available' => true,
+                'last_run_status' => isset($row['last_run_status']) ? (string) $row['last_run_status'] : null,
+                'last_run_at' => isset($row['last_run_at']) ? (string) $row['last_run_at'] : null,
+                'feed_last_build_at' => isset($row['feed_last_build_at']) ? (string) $row['feed_last_build_at'] : null,
+                'processed' => (int) ($row['processed'] ?? 0),
+                'failed' => (int) ($row['failed'] ?? 0),
+                'pending' => (int) ($row['pending'] ?? 0),
+                'manual_request_status' => isset($row['manual_request_status'])
+                    ? (string) $row['manual_request_status']
+                    : null,
+            ];
+        } catch (Throwable) {
+            return [
+                'available' => false,
+                'last_run_status' => null,
+                'last_run_at' => null,
+                'feed_last_build_at' => null,
+                'processed' => 0,
+                'failed' => 0,
+                'pending' => 0,
+                'manual_request_status' => null,
+            ];
+        }
     }
 
     /**

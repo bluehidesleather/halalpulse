@@ -17,6 +17,8 @@ if ($user === null) {
 $summary = $app->dashboard->summary();
 $latest = $app->dashboard->latestFilings(10);
 $sources = $app->dashboard->sourceStatuses();
+$nseIntegrated = $app->dashboard->nseIntegratedStatus();
+$nseIntegratedEnabled = $config->get('sources.nse_integrated_rss.enabled', false) === true;
 
 Page::begin(
     'Overview',
@@ -42,6 +44,44 @@ Page::begin(
     <article class="metric-card"><span>Total filings</span><strong><?= Page::escape($summary['filings']) ?></strong><small>Duplicate-safe records</small></article>
     <article class="metric-card metric-accent"><span>Result candidates</span><strong><?= Page::escape($summary['candidates']) ?></strong><small>Awaiting evidence review</small></article>
     <article class="metric-card"><span>Pending pipeline</span><strong><?= Page::escape($summary['pending']) ?></strong><small>Detected or queued</small></article>
+</section>
+
+<section class="panel sync-panel" aria-labelledby="nse-sync-title">
+    <div class="panel-heading">
+        <div>
+            <p class="eyebrow">Official structured source</p>
+            <h2 id="nse-sync-title">NSE Integrated Filing Financials</h2>
+        </div>
+        <?php
+        $nseState = !$nseIntegrated['available']
+            ? 'Migration required'
+            : ($nseIntegrated['last_run_status'] === null ? 'Not run' : ucfirst($nseIntegrated['last_run_status']));
+        ?>
+        <span class="status status-<?= Page::escape($nseIntegrated['last_run_status'] ?? 'pending') ?>"><?= Page::escape($nseState) ?></span>
+    </div>
+    <div class="sync-grid">
+        <div><span>Archived XBRL</span><strong><?= Page::escape($nseIntegrated['processed']) ?></strong></div>
+        <div><span>Pending</span><strong><?= Page::escape($nseIntegrated['pending']) ?></strong></div>
+        <div><span>Retrying</span><strong><?= Page::escape($nseIntegrated['failed']) ?></strong></div>
+        <div><span>Feed build</span><strong class="sync-time"><?= Page::escape($nseIntegrated['feed_last_build_at'] ?? 'Never') ?></strong></div>
+    </div>
+    <div class="sync-actions">
+        <p>
+            Automatic sync runs every five minutes. The button safely queues the same duplicate-proof pipeline;
+            it does not perform a long download inside the browser request.
+        </p>
+        <?php if ($user->role === 'admin'): ?>
+            <form method="post" action="/sync-nse.php">
+                <input type="hidden" name="csrf_token" value="<?= Page::escape($app->session->csrfToken()) ?>">
+                <button class="button button-primary" type="submit" <?= (!$nseIntegratedEnabled || !$nseIntegrated['available']) ? 'disabled' : '' ?>>Sync data now</button>
+            </form>
+        <?php endif; ?>
+    </div>
+    <?php if (!$nseIntegratedEnabled): ?>
+        <small class="sync-note">Disabled until migration 009, private archive storage, and the five-minute Hostinger cron are configured.</small>
+    <?php elseif ($nseIntegrated['manual_request_status'] !== null): ?>
+        <small class="sync-note">Latest manual request: <?= Page::escape($nseIntegrated['manual_request_status']) ?> · Last run: <?= Page::escape($nseIntegrated['last_run_at'] ?? 'Never') ?></small>
+    <?php endif; ?>
 </section>
 
 <section class="dashboard-grid">

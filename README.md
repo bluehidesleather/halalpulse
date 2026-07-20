@@ -6,7 +6,7 @@ Private, personal-use intelligence platform for detecting new NSE/BSE quarterly-
 
 - PHP 8.3 and MySQL 8 on the existing shared hosting; no VPS is required.
 - Plain PHP with PDO, no framework, no Composer, and no `.env` dependency.
-- One lightweight latest-filings request per hour for NSE and one for BSE; never one request per company.
+- One lightweight latest-filings request per hour for the legacy NSE/BSE browser adapters; the official NSE Integrated Filing RSS is a separate five-minute feed-level request matching its published TTL. Never poll one URL per company.
 - Official exchange and government sources only. Media/news sites are excluded.
 - Layer 1: AAOIFI Sharia pass/fail plus compliance rank 1–5.
 - Layer 2: separate multibagger score 1–10; scores 1–4 may trigger an alert.
@@ -15,7 +15,7 @@ Private, personal-use intelligence platform for detecting new NSE/BSE quarterly-
 
 ## Current milestone
 
-Milestone 9 replaces Twilio with duplicate-resistant Telegram Bot delivery for the latest fresh Sharia-pass, score-≤4 candidate. Recipient consent and activation are database-managed, chat IDs are encrypted at rest, and delivery remains disabled by default.
+Milestone 10 adds a disabled-by-default, integrity-preserving NSE Integrated Filing RSS/XBRL pipeline. It archives source XML privately, stores normalized financial results plus all XBRL facts, retries individual failures, runs automatically every five minutes, and exposes an administrator-only queue button on the dashboard.
 
 ## Repository layout
 
@@ -41,12 +41,12 @@ tests/               Dependency-free test harness
 7. For the Sharia module, copy `config/sharia-policy.example.json` to the ignored `config/sharia-policy.local.json`. Verify and fill it from the current official or licensed standard text; do not invent missing values.
 8. Activate the reviewed policy with `php cron/install-sharia-policy.php config/sharia-policy.local.json`.
 9. Copy `config/multibagger-methodology.example.json` to the ignored `config/multibagger-methodology.local.json`, review every factor and assumption, approve it, then run `php cron/install-multibagger-methodology.php config/multibagger-methodology.local.json`.
-10. Apply migrations `006_government_tailwinds.sql`, `007_alert_delivery.sql`, and `008_telegram_alerts.sql` in order on an existing installation (fresh installs import the full schema).
+10. Apply migrations `006_government_tailwinds.sql`, `007_alert_delivery.sql`, `008_telegram_alerts.sql`, and `009_nse_integrated_rss.sql` in order on an existing installation (fresh installs import the full schema).
 11. Run `php tests/run.php` and `php cron/healthcheck.php`.
 12. Point the domain document root at this project's `public_html` directory and sign in over HTTPS.
 13. Run `php cron/probe-sources.php NSE BSE` from the hosting account. This makes one request to each exchange and does not write to the database.
 14. Run `php cron/probe-government-sources.php PIB SEBI RBI MCA BUDGET`; enable only each source that succeeds with plausible official records.
-15. Configure hourly control-panel cron commands for `poll-filings.php`, `poll-government-announcements.php`, and the bounded `process-documents.php --limit=3` batch at different minutes.
+15. Follow `docs/NSE_INTEGRATED_RSS.md`, validate one CLI sync, then configure `sync-nse-integrated.php` every five minutes. Configure the legacy filings, government, and bounded document jobs hourly at different minutes.
 16. Follow `docs/ALERT_DELIVERY.md`; keep alerts disabled until the private bot token, `/start` consent, encrypted database recipient, and manual smoke-test gates are complete.
 
 `config/config.local.php` is ignored by Git. Application code, configuration, SQL, logs, and cron files remain outside `public_html`.
@@ -66,5 +66,7 @@ See `docs/MULTIBAGGER_SCORING.md` for factor weights, score direction, dual valu
 See `docs/GOVERNMENT_TAILWINDS.md` for the five official contracts, production-host probes, classifier boundary, and human approval workflow.
 
 See `docs/ALERT_DELIVERY.md` for Telegram consent, encrypted recipients, the freshness/idempotency model, private configuration, and safe manual recovery procedure.
+
+See `docs/NSE_INTEGRATED_RSS.md` for the official RSS/XBRL contract, private evidence archive, five-minute worker, dashboard queue button, recovery model, and legal/coverage boundaries.
 
 Personal use only. HalalPulse is a research aid, not financial or religious advice.

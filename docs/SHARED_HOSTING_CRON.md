@@ -1,6 +1,6 @@
 # Shared-hosting cron setup
 
-HalalPulse needs one scheduled command per hour. The command polls each enabled exchange once; MySQL advisory locks prevent overlapping runs.
+HalalPulse uses a five-minute command for the official NSE Integrated Filing RSS plus hourly commands for the legacy exchange, government, document, and alert workflows. MySQL advisory locks prevent overlapping runs.
 
 ## Before scheduling
 
@@ -8,13 +8,25 @@ HalalPulse needs one scheduled command per hour. The command polls each enabled 
 2. Keep the project outside `public_html`, except for the supplied `public_html` directory.
 3. Create `config/config.local.php` from the example and add the real database credentials there.
 4. Generate and configure the private application key, then create the administrator as described in `AUTHENTICATION.md`.
-5. Import `database/schema.sql`.
+5. Import `database/schema.sql`, or apply all missing numbered migrations including `009_nse_integrated_rss.sql` to an existing database.
 6. Verify and activate the ignored local Sharia policy as described in `SHARIA_SCREENING.md`; the example intentionally has no usable thresholds.
 7. Review and activate the ignored local multibagger methodology as described in `MULTIBAGGER_SCORING.md`.
 8. Run the tests, health check, source probes, and one manual poll in that order.
 9. Probe all five government adapters separately and enable only the contracts that pass, as described in `GOVERNMENT_TAILWINDS.md`.
 
-## Schedule
+## NSE Integrated Filing schedule
+
+Choose “every five minutes” and use the host's displayed PHP 8.3 executable and absolute project paths:
+
+```sh
+/path/to/php83 /home/ACCOUNT/halalpulse/cron/sync-nse-integrated.php
+```
+
+The worker makes one feed request per run and downloads only newly discovered or retry-due official XBRL documents. It also claims the authenticated dashboard’s queued manual request. Scheduled and manual work share one advisory lock and cannot overlap.
+
+On Hostinger CloudLinux, the PHP 8.3 CLI is commonly `/opt/alt/php83/usr/bin/php`; verify it with `-v` rather than copying the path blindly.
+
+## Hourly schedule
 
 Choose “once per hour” in the control panel. Use the host's displayed PHP 8.3 executable path and the absolute project path. A typical command shape is:
 
@@ -51,5 +63,7 @@ If the command says `not_configured`, both source flags are still false. This is
 The document command makes requests only for newly discovered quarterly-result candidates with an official attachment. It does not poll every company. If the host lacks `pdftotext` or disables `proc_open`, downloads still complete and the dashboard marks those PDFs for manual review.
 
 The government command makes at most one request per enabled publisher each hour. It performs no automatic approval: announcements remain in the authenticated Tailwinds queue until a human records a reviewed decision.
+
+The NSE Integrated worker returns `succeeded`, `partial`, `skipped`, or `not_configured`. A partial result means the feed was safely recorded but at least one XBRL remains in the retry queue. See `NSE_INTEGRATED_RSS.md` before enabling it.
 
 The alert command defaults to one message per active recipient per run. It sends nothing unless every current Sharia, methodology, score, factor, valuation, risk, government-evidence, and recipient-consent gate passes. See `ALERT_DELIVERY.md`; the recipient must start the Telegram bot before registration.

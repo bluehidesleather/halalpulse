@@ -1,0 +1,145 @@
+SET NAMES utf8mb4;
+SET time_zone = '+05:30';
+
+CREATE TABLE IF NOT EXISTS nse_sync_requests (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    source_key VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    requested_by_user_id BIGINT UNSIGNED NOT NULL,
+    status ENUM('pending', 'running', 'succeeded', 'failed') NOT NULL DEFAULT 'pending',
+    requested_at DATETIME NOT NULL,
+    started_at DATETIME NULL,
+    finished_at DATETIME NULL,
+    result_payload JSON NULL,
+    error_message TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_nse_sync_requests_queue (source_key, status, requested_at),
+    KEY idx_nse_sync_requests_user (requested_by_user_id, requested_at),
+    CONSTRAINT fk_nse_sync_requests_user FOREIGN KEY (requested_by_user_id) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS nse_integrated_sync_runs (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    trigger_type ENUM('scheduled', 'manual') NOT NULL,
+    sync_request_id BIGINT UNSIGNED NULL,
+    status ENUM('running', 'succeeded', 'partial', 'failed', 'skipped') NOT NULL DEFAULT 'running',
+    feed_last_build_at DATETIME NULL,
+    feed_sha256 CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+    feed_storage_path VARCHAR(500) NULL,
+    feed_items INT UNSIGNED NOT NULL DEFAULT 0,
+    items_discovered INT UNSIGNED NOT NULL DEFAULT 0,
+    items_queued INT UNSIGNED NOT NULL DEFAULT 0,
+    items_processed INT UNSIGNED NOT NULL DEFAULT 0,
+    items_failed INT UNSIGNED NOT NULL DEFAULT 0,
+    started_at DATETIME NOT NULL,
+    finished_at DATETIME NULL,
+    duration_ms INT UNSIGNED NULL,
+    error_message TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_nse_integrated_runs_started (started_at),
+    KEY idx_nse_integrated_runs_status (status, started_at),
+    KEY idx_nse_integrated_runs_request (sync_request_id),
+    CONSTRAINT fk_nse_integrated_runs_request FOREIGN KEY (sync_request_id) REFERENCES nse_sync_requests (id)
+        ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS nse_integrated_feed_items (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    source_url VARCHAR(768) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    source_filename VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    company_name VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    filing_type ENUM('original', 'revision', 'other') NOT NULL,
+    revision_note TEXT NOT NULL,
+    published_at DATETIME NOT NULL,
+    item_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+    raw_item JSON NOT NULL,
+    status ENUM('pending', 'processing', 'processed', 'failed') NOT NULL DEFAULT 'pending',
+    attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    next_attempt_at DATETIME NULL,
+    last_error TEXT NULL,
+    filing_id BIGINT UNSIGNED NULL,
+    xbrl_storage_path VARCHAR(500) NULL,
+    xbrl_sha256 CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+    xbrl_size_bytes BIGINT UNSIGNED NULL,
+    taxonomy_uri VARCHAR(500) NULL,
+    first_discovered_at DATETIME NOT NULL,
+    last_seen_at DATETIME NOT NULL,
+    processed_at DATETIME NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_nse_integrated_source_url (source_url),
+    UNIQUE KEY uq_nse_integrated_filing (filing_id),
+    KEY idx_nse_integrated_queue (status, next_attempt_at, published_at),
+    KEY idx_nse_integrated_company_time (company_name, published_at),
+    KEY idx_nse_integrated_sha256 (xbrl_sha256),
+    CONSTRAINT fk_nse_integrated_filing FOREIGN KEY (filing_id) REFERENCES filings (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS financial_results (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    integrated_item_id BIGINT UNSIGNED NOT NULL,
+    filing_id BIGINT UNSIGNED NOT NULL,
+    company_id BIGINT UNSIGNED NOT NULL,
+    scrip_code VARCHAR(32) NULL,
+    isin VARCHAR(16) NULL,
+    company_type VARCHAR(100) NULL,
+    security_class VARCHAR(100) NULL,
+    financial_year_start DATE NULL,
+    financial_year_end DATE NULL,
+    period_start DATE NULL,
+    period_end DATE NOT NULL,
+    reporting_period_type VARCHAR(64) NULL,
+    reporting_quarter VARCHAR(64) NULL,
+    audit_status VARCHAR(64) NULL,
+    statement_scope ENUM('standalone', 'consolidated', 'unknown') NOT NULL DEFAULT 'unknown',
+    currency CHAR(3) NOT NULL DEFAULT 'INR',
+    rounding_level VARCHAR(32) NULL,
+    board_approval_date DATE NULL,
+    revenue_from_operations DECIMAL(36, 6) NULL,
+    other_income DECIMAL(36, 6) NULL,
+    total_income DECIMAL(36, 6) NULL,
+    finance_costs DECIMAL(36, 6) NULL,
+    total_expenses DECIMAL(36, 6) NULL,
+    profit_before_tax DECIMAL(36, 6) NULL,
+    tax_expense DECIMAL(36, 6) NULL,
+    profit_for_period DECIMAL(36, 6) NULL,
+    profit_attributable_to_owners DECIMAL(36, 6) NULL,
+    basic_eps DECIMAL(24, 8) NULL,
+    diluted_eps DECIMAL(24, 8) NULL,
+    debt_equity_ratio DECIMAL(24, 12) NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_financial_results_integrated_item (integrated_item_id),
+    UNIQUE KEY uq_financial_results_filing (filing_id),
+    KEY idx_financial_results_company_period (company_id, period_end, statement_scope),
+    KEY idx_financial_results_isin_period (isin, period_end),
+    CONSTRAINT fk_financial_results_item FOREIGN KEY (integrated_item_id) REFERENCES nse_integrated_feed_items (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_financial_results_filing FOREIGN KEY (filing_id) REFERENCES filings (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_financial_results_company FOREIGN KEY (company_id) REFERENCES companies (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS xbrl_facts (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    integrated_item_id BIGINT UNSIGNED NOT NULL,
+    fact_name VARCHAR(191) NOT NULL,
+    context_ref VARCHAR(191) NOT NULL,
+    unit_ref VARCHAR(100) NULL,
+    decimals_value VARCHAR(32) NULL,
+    fact_value LONGTEXT NOT NULL,
+    occurrence SMALLINT UNSIGNED NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_xbrl_fact_identity (integrated_item_id, fact_name, context_ref, occurrence),
+    KEY idx_xbrl_facts_name (fact_name),
+    CONSTRAINT fk_xbrl_facts_item FOREIGN KEY (integrated_item_id) REFERENCES nse_integrated_feed_items (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -11,6 +11,8 @@ The probe performs one GET per selected exchange, maps the response in memory, p
 
 Government adapters use a separate disabled-by-default contract and probe. See `GOVERNMENT_TAILWINDS.md` for the five primary-source routes, RSS/HTML marker rules, source-specific URL allowlists, and human approval gate.
 
+NSE also publishes a distinct official Integrated Filing Financials RSS/XBRL contract. It is not the browser JSON route described below and does not require rotating headers or session-cookie emulation. See `NSE_INTEGRATED_RSS.md` for its strict archive URL, XML, storage, retry, and five-minute scheduling rules.
+
 ## NSE
 
 - Official page: `https://www.nseindia.com/companies-listing/corporate-filings-announcements`
