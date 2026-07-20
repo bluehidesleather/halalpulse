@@ -22,17 +22,6 @@ if ($email === '' || $displayName === '') {
     exit(2);
 }
 
-$users = new UserRepository(Database::connect($config));
-if ($users->activeAdminCount() > 0) {
-    fwrite(STDERR, "An active administrator already exists. This personal installation permits one active administrator.\n");
-    exit(1);
-}
-
-if ($users->emailExists($email)) {
-    fwrite(STDERR, "An account with that email already exists. Use reset-admin-password.php instead.\n");
-    exit(1);
-}
-
 $readPassword = static function (string $prompt): string {
     fwrite(STDOUT, $prompt);
     $mode = null;
@@ -74,5 +63,20 @@ if ($violations !== []) {
     exit(1);
 }
 
-$userId = $users->createAdmin($email, $displayName, (new PasswordHasher())->hash($password));
+// Complete all interactive work before opening the database connection. Some
+// shared hosts close idle database sessions while an operator types a password.
+$passwordHash = (new PasswordHasher())->hash($password);
+$users = new UserRepository(Database::connect($config));
+
+if ($users->activeAdminCount() > 0) {
+    fwrite(STDERR, "An active administrator already exists. This personal installation permits one active administrator.\n");
+    exit(1);
+}
+
+if ($users->emailExists($email)) {
+    fwrite(STDERR, "An account with that email already exists. Use reset-admin-password.php instead.\n");
+    exit(1);
+}
+
+$userId = $users->createAdmin($email, $displayName, $passwordHash);
 fwrite(STDOUT, "Administrator created with user ID {$userId}.\n");
