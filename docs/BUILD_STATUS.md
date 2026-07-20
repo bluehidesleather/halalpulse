@@ -94,11 +94,11 @@ Repository target: `bluehidesleather/halalpulse`
 
 ## Validation completed
 
-- All 138 PHP files passed independent grammar parsing; GitHub CI performs the authoritative PHP 8.3 lint after publication.
-- The suite now includes 19 synthetic NSE RSS/XBRL URL, parsing, XXE-rejection, fact-retention, decimal, context-selection, and archive-integrity assertions in addition to the previous 99 checks.
+- All 138 PHP files passed both independent grammar parsing and the authoritative GitHub PHP 8.3 syntax sweep.
+- The dependency-free PHP 8.3 suite passes all 118 checks, including 19 synthetic NSE RSS/XBRL URL, parsing, XXE-rejection, fact-retention, decimal, context-selection, and archive-integrity assertions.
 - All six JSON policy, methodology, and exchange-adapter fixtures passed strict decoding; synthetic RSS/HTML government fixtures were also added.
 - CSS delimiter and static internal-link checks passed.
-- The full schema contains 29 non-duplicate tables; CI imports the canonical schema into MySQL 8 and requires the exact count.
+- The full schema contains 29 non-duplicate tables; CI successfully imports the canonical schema into MySQL 8 and requires the exact count.
 - Every application import and static internal PHP link resolves, and CSS delimiters are balanced.
 - No real database password, token, API key, cookie, Telegram chat ID, or bot credential is included.
 - No VPS-only dependency is included. The only sub-hourly job is the official feed-level RSS worker at the feed’s published five-minute TTL.
@@ -116,4 +116,4 @@ Run the exchange and government probes, activate the reviewed policy/methodology
 
 ## GitHub publication state
 
-The GitHub App has administrator/write access to `bluehidesleather/halalpulse`. Version 0.9.0 remains isolated on `agent/telegram-alerts-v0.9` in draft pull request #1. This checkpoint targets a separate `agent/nse-rss-sync` branch and must not replace or force-push `main`.
+The GitHub App has administrator/write access to `bluehidesleather/halalpulse`. This checkpoint is published on the separate `agent/nse-rss-sync` branch in draft pull request #4. Its PHP 8.3/MySQL 8 CI passed; `main` was not replaced or force-pushed.
