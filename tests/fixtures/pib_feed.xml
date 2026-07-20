@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Synthetic PIB fixture</title>
+    <item>
+      <title>Government approves renewable energy manufacturing support scheme</title>
+      <link>https://www.pib.gov.in/PressReleasePage.aspx?PRID=SYNTHETIC001</link>
+      <guid>SYNTHETIC-PIB-001</guid>
+      <pubDate>Sun, 19 Jul 2026 10:00:00 +0530</pubDate>
+      <category>Cabinet</category>
+      <description>Synthetic test record for solar manufacturing incentives.</description>
+    </item>
+    <item>
+      <title>Incomplete synthetic item</title>
+      <link>https://example.com/not-official</link>
+      <guid>SYNTHETIC-PIB-002</guid>
+      <pubDate>Sun, 19 Jul 2026 11:00:00 +0530</pubDate>
+    </item>
+  </channel>
+</rss>

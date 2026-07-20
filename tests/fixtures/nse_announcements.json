@@ -1,0 +1,25 @@
+[
+  {
+    "seq_id": "SYNTHETIC-NSE-001",
+    "symbol": "DEMO",
+    "sm_name": "Demonstration Industries Limited",
+    "desc": "Financial Results",
+    "attchmntText": "Unaudited standalone and consolidated financial results for the quarter ended June 30, 2026",
+    "an_dt": "19-Jul-2026 14:30:00",
+    "attchmntFile": "https://nsearchives.nseindia.com/corporate/SYNTHETIC_DEMO_RESULT.pdf"
+  },
+  {
+    "symbol": "SAMPLE",
+    "sm_name": "Sample Manufacturing Limited",
+    "desc": "Corporate Announcement",
+    "attchmntText": "Investor presentation following quarterly results",
+    "sort_date": "2026-07-19 13:15:00",
+    "attchmntFile": "https://third-party.invalid/sample.pdf"
+  },
+  {
+    "seq_id": "SYNTHETIC-NSE-BAD",
+    "sm_name": "Incomplete Fixture Limited",
+    "desc": "Financial Results",
+    "an_dt": "19-Jul-2026 12:00:00"
+  }
+]

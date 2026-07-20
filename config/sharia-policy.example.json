@@ -1,0 +1,37 @@
+{
+  "version": "REPLACE-WITH-VERIFIED-VERSION",
+  "name": "Verified Sharia screening policy",
+  "authority_name": "AAOIFI",
+  "authority_standard": "Sharia Standard No. 21",
+  "authority_reference_url": "https://aaoifi.com/ss-21-financial-paper-shares-and-bonds/?lang=en",
+  "effective_date": "2026-01-01",
+  "verified_by": "REPLACE-WITH-REVIEWER",
+  "verification_note": "Replace this note after checking the current official or licensed standard text and documenting the exact clauses used.",
+  "approved_for_use": false,
+  "ratios": [
+    {
+      "key": "debt_ratio",
+      "label": "Debt screening ratio",
+      "numerator_key": "interest_bearing_debt",
+      "denominator_key": "policy_reference_value",
+      "max_percent": null,
+      "required": true
+    },
+    {
+      "key": "deposit_ratio",
+      "label": "Interest-bearing deposit screening ratio",
+      "numerator_key": "interest_bearing_deposits",
+      "denominator_key": "policy_reference_value",
+      "max_percent": null,
+      "required": true
+    },
+    {
+      "key": "impermissible_income_ratio",
+      "label": "Impermissible income screening ratio",
+      "numerator_key": "impermissible_income",
+      "denominator_key": "total_revenue",
+      "max_percent": null,
+      "required": true
+    }
+  ]
+}
