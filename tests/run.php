@@ -37,6 +37,11 @@ use HalalPulse\Alerts\AlertConfiguration;
 use HalalPulse\Alerts\AlertDispatcher;
 use HalalPulse\Alerts\AlertMessageBuilder;
 use HalalPulse\Alerts\AlertRecipientCrypto;
+use HalalPulse\Nse\IntegratedRssParser;
+use HalalPulse\Nse\IntegratedXbrlParser;
+use HalalPulse\Nse\NseIntegratedUrl;
+use HalalPulse\Nse\NseSourceException;
+use HalalPulse\Nse\XmlArchive;
 
 require dirname(__DIR__) . '/app/bootstrap.php';
 
@@ -151,6 +156,52 @@ $assert(GovernmentOfficialUrl::isAllowed('https://www.pib.gov.in/PressReleasePag
 $assert(!GovernmentOfficialUrl::isAllowed('https://www.pib.gov.in/synthetic', 'RBI'), 'Government URL guard rejects an official host assigned to the wrong source.');
 
 if (extension_loaded('dom')) {
+    $integratedFeedFixture = file_get_contents(__DIR__ . '/fixtures/nse_integrated_feed.xml');
+    if (!is_string($integratedFeedFixture)) {
+        throw new RuntimeException('Unable to read synthetic NSE Integrated Filing RSS fixture.');
+    }
+    $integratedFeed = (new IntegratedRssParser())->parse($integratedFeedFixture);
+    $assert($integratedFeed->sourceRows === 3, 'NSE Integrated RSS parser counts every source item.');
+    $assert(count($integratedFeed->items) === 2, 'NSE Integrated RSS parser rejects a third-party XBRL link.');
+    $assert(count($integratedFeed->warnings) === 1, 'NSE Integrated RSS parser records a warning without losing valid items.');
+    $assert($integratedFeed->ttlMinutes === 5, 'NSE Integrated RSS parser retains the official five-minute TTL.');
+    $assert($integratedFeed->items[1]->filingType === 'revision', 'NSE Integrated RSS parser preserves revision status.');
+    $assert($integratedFeed->items[1]->revisionNote === 'Corrected EPS', 'NSE Integrated RSS parser preserves revision notes.');
+    $assert($integratedFeed->items[0]->publishedAt->format('Y-m-d H:i:s') === '2026-07-20 07:58:45', 'NSE Integrated RSS item time is interpreted in India market time.');
+    $assert(NseIntegratedUrl::isAllowedXbrl($integratedFeed->items[0]->sourceUrl), 'NSE Integrated URL guard accepts the exact archive contract.');
+    $assert(!NseIntegratedUrl::isAllowedXbrl($integratedFeed->items[0]->sourceUrl . '?download=1'), 'NSE Integrated URL guard rejects query-string changes.');
+    $assert(NseIntegratedUrl::isAllowedFeed('https://nsearchives.nseindia.com/content/RSS/Integrated_Filing_Financials.xml'), 'NSE Integrated URL guard accepts only the exact official feed endpoint.');
+
+    $integratedXbrlFixture = file_get_contents(__DIR__ . '/fixtures/nse_integrated_xbrl.xml');
+    if (!is_string($integratedXbrlFixture)) {
+        throw new RuntimeException('Unable to read synthetic NSE Integrated Filing XBRL fixture.');
+    }
+    $integratedResult = (new IntegratedXbrlParser())->parse($integratedXbrlFixture);
+    $assert($integratedResult->metadata['symbol'] === 'DEMO', 'NSE Integrated XBRL parser extracts the exchange symbol.');
+    $assert($integratedResult->metadata['statement_scope'] === 'standalone', 'NSE Integrated XBRL parser normalizes statement scope.');
+    $assert($integratedResult->metrics['revenue_from_operations'] === '12505000000', 'NSE Integrated XBRL parser prefers the current OneD reporting context.');
+    $assert($integratedResult->metrics['basic_eps'] === '12.34', 'NSE Integrated XBRL parser normalizes exact decimal values.');
+    $assert(count($integratedResult->facts) >= 25, 'NSE Integrated XBRL parser retains all reportable facts for zero-loss review.');
+
+    $unsafeXmlRejected = false;
+    try {
+        (new IntegratedRssParser())->parse('<!DOCTYPE rss [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><rss><channel><title>&xxe;</title></channel></rss>');
+    } catch (NseSourceException) {
+        $unsafeXmlRejected = true;
+    }
+    $assert($unsafeXmlRejected, 'NSE XML parser rejects DTD and entity declarations before DOM parsing.');
+
+    $archiveBase = sys_get_temp_dir() . '/halalpulse-xbrl-' . bin2hex(random_bytes(8));
+    if (!mkdir($archiveBase, 0700, true) && !is_dir($archiveBase)) {
+        throw new RuntimeException('Unable to create the synthetic NSE archive directory.');
+    }
+    $archive = new XmlArchive($archiveBase);
+    $archived = $archive->storeXbrl($integratedXbrlFixture, $integratedFeed->items[0]);
+    $assert(is_file($archived->absolutePath), 'NSE XML archive writes evidence into private storage.');
+    $assert(hash_file('sha256', $archived->absolutePath) === $archived->sha256, 'NSE XML archive verifies the evidence checksum.');
+    $archiveAgain = $archive->storeXbrl($integratedXbrlFixture, $integratedFeed->items[0]);
+    $assert($archiveAgain->relativePath === $archived->relativePath, 'NSE XML archive is idempotent for identical source evidence.');
+
     $pibFixture = file_get_contents(__DIR__ . '/fixtures/pib_feed.xml');
     if (!is_string($pibFixture)) {
         throw new RuntimeException('Unable to read synthetic PIB fixture.');

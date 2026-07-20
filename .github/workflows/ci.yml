@@ -80,7 +80,7 @@ jobs:
         run: |
           mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test < database/schema.sql
           table_count="$(mysql --protocol=TCP -N -B -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'halalpulse_test';")"
-          test "$table_count" -eq 24
+          test "$table_count" -eq 29
 
       - name: Create isolated CI configuration
         run: |

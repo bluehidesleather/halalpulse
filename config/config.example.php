@@ -37,6 +37,7 @@ return [
         'user_agent' => 'HalalPulse/0.9 (personal research; contact configured privately)',
         'allowed_hosts' => [
             'www.nseindia.com',
+            'nsearchives.nseindia.com',
             'api.bseindia.com',
         ],
     ],
@@ -56,6 +57,17 @@ return [
         ],
     ],
     'sources' => [
+        'nse_integrated_rss' => [
+            // Official RSS/XBRL publication path. Enable only after migration 009 and cron setup.
+            'enabled' => false,
+            'official_page' => 'https://www.nseindia.com/static/rss-feed',
+            'endpoint' => 'https://nsearchives.nseindia.com/content/RSS/Integrated_Filing_Financials.xml',
+            // Keep raw source evidence outside public_html.
+            'storage_path' => dirname(__DIR__) . '/storage/xbrl',
+            'interval_seconds' => 300,
+            'manual_cooldown_seconds' => 300,
+            'batch_size' => 20,
+        ],
         'nse' => [
             'enabled' => false,
             'official_page' => 'https://www.nseindia.com/companies-listing/corporate-filings-announcements',

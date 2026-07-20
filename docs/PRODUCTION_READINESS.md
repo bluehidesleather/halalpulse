@@ -17,7 +17,7 @@ Do not enable live polling or Telegram delivery until every applicable gate belo
 
 - [ ] The project root is outside the public web root.
 - [ ] The domain document root points only to the supplied `public_html` directory.
-- [ ] `storage/logs`, `storage/cache`, `storage/tmp`, and `storage/documents` are writable by the PHP/cron account and are not web-accessible.
+- [ ] `storage/logs`, `storage/cache`, `storage/tmp`, `storage/documents`, and `storage/xbrl` are writable by the PHP/cron account and are not web-accessible.
 - [ ] HTTPS is active before the first login and `app.force_https` remains `true`; confirm an `http://` request is refused and an `https://` response includes `Strict-Transport-Security`.
 - [ ] Directory listing is disabled and the supplied `public_html/.htaccess` is effective.
 - [ ] `robots.txt` disallows all crawling and authenticated/login responses include `X-Robots-Tag: noindex, nofollow, noarchive`.
@@ -73,6 +73,8 @@ php cron/probe-government-sources.php PIB SEBI RBI MCA BUDGET
 - [ ] One small `process-documents.php --limit=1` run either stored a valid private PDF or failed safely for manual review.
 - [ ] One manual government poll stored announcements without automatically approving them as investment evidence.
 
+For the official NSE Integrated Filing feed, separately complete `NSE_INTEGRATED_RSS.md`: apply migration 009, enable the private source block, run one CLI sync, verify RSS/XBRL checksums and database rows, then add its five-minute cron. Confirm the dashboard button only queues work and that repeated runs do not duplicate filings.
+
 ## 6. Telegram gate
 
 - [ ] The bot was created with `@BotFather`, and its token exists only in `config/config.local.php`.
@@ -83,9 +85,9 @@ php cron/probe-government-sources.php PIB SEBI RBI MCA BUDGET
 - [ ] Repeating the same alert command did not create a duplicate submission.
 - [ ] `alerts.enabled` remains `false` until all preceding checks pass.
 
-## 7. Hourly schedule and observation
+## 7. Schedule and observation
 
-Configure the absolute PHP 8.3 and project paths shown by the hosting control panel. Stagger the jobs within the hour:
+Configure the official NSE Integrated Filing worker every five minutes. Configure the other jobs hourly and stagger them within the hour:
 
 1. filings poll;
 2. government poll;
@@ -93,7 +95,8 @@ Configure the absolute PHP 8.3 and project paths shown by the hosting control pa
 4. alert delivery only after the Telegram gate passes.
 
 - [ ] Each command uses the hosting account's real absolute paths.
-- [ ] No job runs more frequently than hourly.
+- [ ] Only the official NSE Integrated Filing RSS worker runs every five minutes; legacy exchange, government, document, and alert jobs remain hourly.
+- [ ] The first 24 hours of NSE integrated sync runs, feed-item retries, private XBRL checksums, and normalized results were reviewed.
 - [ ] The first 24 hours of private logs, source checkpoints, poll audits, document queue state, and alert delivery state were reviewed.
 - [ ] Repeated failures disable the affected adapter until its contract is reviewed; they are not bypassed with scraping tricks or broad retries.
 

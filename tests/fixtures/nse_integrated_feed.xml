@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>INTEGRATED_FILING_FINANCIALS</title>
+    <link>https://www.nseindia.com/</link>
+    <description>Integrated Filing Financial Results</description>
+    <lastBuildDate>Mon, 20 Jul 2026 08:05:00 +0530</lastBuildDate>
+    <ttl>5</ttl>
+    <item>
+      <title>DEMONSTRATION LIMITED</title>
+      <link>https://nsearchives.nseindia.com/corporate/xbrl/INTEGRATED_FILING_INDAS_1697527_20072026075845_WEB.xml</link>
+      <description>Integrated Filing- Financials|Original|</description>
+      <pubDate>20-Jul-2026 07:58:45</pubDate>
+    </item>
+    <item>
+      <title>EXAMPLE INDUSTRIES LIMITED</title>
+      <link>https://nsearchives.nseindia.com/corporate/xbrl/INTEGRATED_FILING_INDAS_1697528_20072026085945_WEB.xml</link>
+      <description>Integrated Filing- Financials|Revision|Corrected EPS</description>
+      <pubDate>20-Jul-2026 08:59:45</pubDate>
+    </item>
+    <item>
+      <title>UNTRUSTED LIMITED</title>
+      <link>https://example.com/corporate/xbrl/INTEGRATED_FILING_INDAS_1697529_20072026090000_WEB.xml</link>
+      <description>Integrated Filing- Financials|Original|</description>
+      <pubDate>20-Jul-2026 09:00:00</pubDate>
+    </item>
+  </channel>
+</rss>

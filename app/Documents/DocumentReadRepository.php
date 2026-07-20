@@ -6,6 +6,7 @@ namespace HalalPulse\Documents;
 
 use InvalidArgumentException;
 use PDO;
+use Throwable;
 
 final class DocumentReadRepository
 {
@@ -145,6 +146,35 @@ final class DocumentReadRepository
         $statement->execute(['document_id' => $documentId]);
 
         return $statement->fetchAll();
+    }
+
+    /** @return array<string, mixed>|null */
+    public function financialResultForFiling(int $filingId): ?array
+    {
+        try {
+            $statement = $this->pdo->prepare(
+                <<<'SQL'
+                SELECT
+                    fr.*,
+                    ni.filing_type,
+                    ni.revision_note,
+                    ni.xbrl_sha256,
+                    ni.xbrl_size_bytes,
+                    ni.taxonomy_uri,
+                    ni.processed_at AS xbrl_processed_at
+                FROM financial_results fr
+                INNER JOIN nse_integrated_feed_items ni ON ni.id = fr.integrated_item_id
+                WHERE fr.filing_id = :filing_id
+                LIMIT 1
+                SQL
+            );
+            $statement->execute(['filing_id' => $filingId]);
+            $row = $statement->fetch();
+
+            return is_array($row) ? $row : null;
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     public function reviewMetric(int $candidateId, string $status, int $userId): ?int

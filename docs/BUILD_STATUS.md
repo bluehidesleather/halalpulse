@@ -1,7 +1,7 @@
 # HalalPulse build status
 
-Version: 0.9.0 Telegram-alerts checkpoint  
-Date: 2026-07-19  
+Version: 0.10.0 NSE Integrated Filing checkpoint
+Date: 2026-07-20
 Repository target: `bluehidesleather/halalpulse`
 
 ## Locked deployment decision
@@ -9,8 +9,8 @@ Repository target: `bluehidesleather/halalpulse`
 - Existing shared hosting; no VPS purchase.
 - PHP 8.3 and MySQL 8.
 - Plain PHP and PDO; no framework, Composer, `.env`, Redis, or resident worker.
-- Hosting control-panel cron runs once every hour.
-- Each hourly run makes at most one latest-filings request to NSE and one to BSE.
+- Hosting control-panel cron runs the official NSE Integrated Filing RSS worker every five minutes; legacy workflows remain hourly.
+- Each integrated run makes one feed request and fetches only new or retry-due official XBRL documents; it never polls every company.
 - Secrets stay in ignored `config/config.local.php` and never enter Git.
 
 ## Completed through this checkpoint
@@ -85,17 +85,23 @@ Repository target: `bluehidesleather/halalpulse`
 - Provider-accepted, known-failed, and unknown outcomes are distinct; interrupted reservations recover to unknown and no failure is automatically retried.
 - Explicit CLI recovery requires inspection of the Telegram chat, unchanged content hash, current eligibility and recipient identity, duplicate-risk confirmation, and a five-attempt ceiling.
 - Authenticated Alerts page manages consented recipients and exposes delivery audit state without credentials or decrypted recipient PII.
+- Strict official NSE Integrated Filing RSS and archive URL contracts with no cookie emulation, header rotation, challenge bypass, redirects, third-party hosts, or XML external entities.
+- Feed-first persistence, MySQL advisory locking, stale-work recovery, bounded retries, and duplicate-safe filing/company/result upserts.
+- Atomic private RSS/XBRL evidence archive with SHA-256 integrity, normalized financial result columns, and complete context-aware XBRL fact retention.
+- Administrator-only, CSRF-protected **Sync data now** queue control that shares the five-minute cron worker and never blocks a web request on exchange downloads.
+- Dashboard source status plus structured filing-detail presentation for period, scope, audit state, units, revenue, expenses, profit, EPS, ratios, taxonomy, and source checksum.
+- Migration `009_nse_integrated_rss.sql`, five-minute Hostinger cron guidance, private-storage health gates, recovery/reconciliation guidance, and explicit personal-use/licensing boundaries.
 
 ## Validation completed
 
-- All 122 PHP files passed both independent grammar parsing and a real PHP 8.3 syntax sweep.
-- The dependency-free PHP 8.3 suite passes all 99 classifier, source-contract, transport, authentication, document, Sharia, scoring, and Telegram checks.
+- All 138 PHP files passed both independent grammar parsing and the authoritative GitHub PHP 8.3 syntax sweep.
+- The dependency-free PHP 8.3 suite passes all 118 checks, including 19 synthetic NSE RSS/XBRL URL, parsing, XXE-rejection, fact-retention, decimal, context-selection, and archive-integrity assertions.
 - All six JSON policy, methodology, and exchange-adapter fixtures passed strict decoding; synthetic RSS/HTML government fixtures were also added.
 - CSS delimiter and static internal-link checks passed.
-- The full schema contains 24 non-duplicate tables; Telegram recipient/delivery fields and migration `008_telegram_alerts.sql` passed structural checks.
+- The full schema contains 29 non-duplicate tables; CI successfully imports the canonical schema into MySQL 8 and requires the exact count.
 - Every application import and static internal PHP link resolves, and CSS delimiters are balanced.
 - No real database password, token, API key, cookie, Telegram chat ID, or bot credential is included.
-- No VPS-only dependency or per-minute polling schedule is included.
+- No VPS-only dependency is included. The only sub-hourly job is the official feed-level RSS worker at the feed’s published five-minute TTL.
 - GitHub CI now provisions PHP 8.3 and MySQL 8, lints the full PHP tree, runs the dependency-free test suite, imports the canonical schema, and executes the deployment health check.
 - Live endpoint tests remain intentionally pending because NSE/BSE and government website contracts must be probed from the actual shared-hosting account before activation.
 - NSE/BSE website JSON and all five government source contracts must be probed from the shared-hosting account before activation. Cloud-browser access can differ from production-host access and anti-bot policy.
@@ -110,4 +116,4 @@ Run the exchange and government probes, activate the reviewed policy/methodology
 
 ## GitHub publication state
 
-The GitHub App is installed for `bluehidesleather/halalpulse`. Version 0.9.0 is published on `agent/telegram-alerts-v0.9` and is under review in draft pull request #1. The release tree contains the expected source paths and remains isolated from `main`; do not replace or force-push `main`.
+The GitHub App has administrator/write access to `bluehidesleather/halalpulse`. This checkpoint is published on the separate `agent/nse-rss-sync` branch in draft pull request #4. Its PHP 8.3/MySQL 8 CI passed; `main` was not replaced or force-pushed.

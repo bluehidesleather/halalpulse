@@ -9,6 +9,8 @@ use HalalPulse\Alerts\AlertConfiguration;
 $config = require dirname(__DIR__) . '/app/bootstrap.php';
 $documentPath = (string) $config->get('documents.storage_path', '');
 $documentRealPath = $documentPath !== '' ? realpath($documentPath) : false;
+$xbrlPath = (string) $config->get('sources.nse_integrated_rss.storage_path', '');
+$xbrlRealPath = $xbrlPath !== '' ? realpath($xbrlPath) : false;
 $webRealPath = realpath(HALALPULSE_ROOT . '/public_html');
 $alertConfig = AlertConfiguration::fromConfig($config);
 $alertConfigurationReady = !$alertConfig->enabled;
@@ -38,6 +40,16 @@ $checks = [
         && is_string($webRealPath)
         && $documentRealPath !== $webRealPath
         && !str_starts_with($documentRealPath, $webRealPath . DIRECTORY_SEPARATOR),
+    'private_xbrl_storage' => is_string($xbrlRealPath)
+        && is_writable($xbrlRealPath)
+        && is_string($webRealPath)
+        && $xbrlRealPath !== $webRealPath
+        && !str_starts_with($xbrlRealPath, $webRealPath . DIRECTORY_SEPARATOR),
+    'nse_integrated_five_minute_sync' => (int) $config->get('sources.nse_integrated_rss.interval_seconds') === 300,
+    'nse_integrated_official_host' => parse_url(
+        (string) $config->get('sources.nse_integrated_rss.endpoint', ''),
+        PHP_URL_HOST,
+    ) === 'nsearchives.nseindia.com',
     'hourly_nse_polling' => (int) $config->get('polling.nse_interval_seconds') === 3600,
     'hourly_bse_polling' => (int) $config->get('polling.bse_interval_seconds') === 3600,
     'hourly_government_polling' => (int) $config->get('government_polling.interval_seconds') === 3600,
@@ -92,6 +104,16 @@ try {
     $checks['alert_recipients_table'] = true;
     $pdo->query('SELECT COUNT(*) FROM alert_delivery_attempts')->fetchColumn();
     $checks['alert_delivery_attempts_table'] = true;
+    $pdo->query('SELECT COUNT(*) FROM nse_sync_requests')->fetchColumn();
+    $checks['nse_sync_requests_table'] = true;
+    $pdo->query('SELECT COUNT(*) FROM nse_integrated_sync_runs')->fetchColumn();
+    $checks['nse_integrated_sync_runs_table'] = true;
+    $pdo->query('SELECT COUNT(*) FROM nse_integrated_feed_items')->fetchColumn();
+    $checks['nse_integrated_feed_items_table'] = true;
+    $pdo->query('SELECT COUNT(*) FROM financial_results')->fetchColumn();
+    $checks['financial_results_table'] = true;
+    $pdo->query('SELECT COUNT(*) FROM xbrl_facts')->fetchColumn();
+    $checks['xbrl_facts_table'] = true;
 } catch (Throwable $exception) {
     $checks['database'] = false;
     $checks['database_timezone'] ??= false;
@@ -115,6 +137,11 @@ try {
     $checks['alert_deliveries_table'] ??= false;
     $checks['alert_recipients_table'] ??= false;
     $checks['alert_delivery_attempts_table'] ??= false;
+    $checks['nse_sync_requests_table'] ??= false;
+    $checks['nse_integrated_sync_runs_table'] ??= false;
+    $checks['nse_integrated_feed_items_table'] ??= false;
+    $checks['financial_results_table'] ??= false;
+    $checks['xbrl_facts_table'] ??= false;
     $databaseError = $exception->getMessage();
 }
 
