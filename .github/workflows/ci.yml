@@ -4,6 +4,7 @@ name: HalalPulse CI
   pull_request:
   push:
     branches:
+      - "main"
       - "agent/**"
 
 permissions:
