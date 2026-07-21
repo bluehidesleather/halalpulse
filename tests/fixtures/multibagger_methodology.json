@@ -12,7 +12,7 @@
   "review_scope": {
     "minimum_history_years": 3,
     "factor_evidence_note_min_chars": 20,
-    "valuation_assumptions_note_min_chars": 40,
+    "valuation_assumptions_note_min_chars": 20,
     "official_sources_only": true,
     "same_period_sharia_pass_required": true,
     "media_sources_allowed": false
