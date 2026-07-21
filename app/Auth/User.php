@@ -13,6 +13,7 @@ final readonly class User
         public string $passwordHash,
         public string $role,
         public bool $isActive,
+        public int $authVersion,
     ) {
     }
 }
