@@ -346,7 +346,7 @@ final readonly class BackupService
     {
         $process = proc_open(
             ['/usr/bin/git', '-C', $this->projectRoot, 'rev-parse', 'HEAD'],
-            [0 => ['file', '/dev/null', 'rb'], 1 => ['pipe', 'rb'], 2 => ['file', '/dev/null', 'wb']],
+            [0 => ['file', '/dev/null', 'rb'], 1 => ['pipe', 'w'], 2 => ['file', '/dev/null', 'wb']],
             $pipes,
         );
         if (!is_resource($process)) {
