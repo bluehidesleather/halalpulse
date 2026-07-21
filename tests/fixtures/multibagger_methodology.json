@@ -1,19 +1,60 @@
 {
-  "version": "synthetic-score-test-v1",
+  "version": "synthetic-score-test-v2",
   "name": "Synthetic score methodology — not investment guidance",
-  "effective_date": "2026-07-19",
+  "effective_date": "2026-07-21",
   "verified_by": "Automated test fixture",
-  "verification_note": "Made-up factor weights and flags used only for deterministic software tests.",
+  "verification_note": "Made-up factor weights, grade anchors, valuation assumptions, source rules, market-cap bands, and flags used only for deterministic software tests.",
   "approved_for_use": true,
   "grade_direction": "1_best_10_weakest",
   "alert_max_score": 4,
   "graham_coefficient": "22.5",
   "valuation_required": true,
+  "review_scope": {
+    "minimum_history_years": 3,
+    "factor_evidence_note_min_chars": 20,
+    "valuation_assumptions_note_min_chars": 20,
+    "official_sources_only": true,
+    "same_period_sharia_pass_required": true,
+    "media_sources_allowed": false
+  },
   "factors": [
-    {"key": "financial_strength", "label": "Synthetic financial strength", "description": "Synthetic evidence factor for automated tests only.", "weight_percent": 50, "required": true},
-    {"key": "macro_tailwind", "label": "Synthetic official macro factor", "description": "Synthetic government-source factor for automated tests only.", "weight_percent": 50, "required": true}
+    {
+      "key": "financial_strength",
+      "label": "Synthetic financial strength",
+      "description": "Synthetic evidence factor for automated tests only.",
+      "weight_percent": 50,
+      "required": true,
+      "evidence_requirements": ["Retain the synthetic financial statement evidence used for the grade.", "Document the synthetic calculations and reconcile the assigned grade."],
+      "grade_anchors": {
+        "1": "Synthetic strongest financial-strength evidence anchor.",
+        "4": "Synthetic above-average financial-strength evidence anchor.",
+        "7": "Synthetic weak financial-strength evidence anchor.",
+        "10": "Synthetic materially adverse financial-strength evidence anchor."
+      }
+    },
+    {
+      "key": "macro_tailwind",
+      "label": "Synthetic official macro factor",
+      "description": "Synthetic government-source factor for automated tests only.",
+      "weight_percent": 50,
+      "required": true,
+      "evidence_requirements": ["Retain one synthetic approved government-tailwind review.", "Document the synthetic transmission mechanism to the company."],
+      "grade_anchors": {
+        "1": "Synthetic strong direct macro-tailwind evidence anchor.",
+        "4": "Synthetic moderate macro-tailwind evidence anchor.",
+        "7": "Synthetic weak or uncertain macro evidence anchor.",
+        "10": "Synthetic material macro-headwind evidence anchor."
+      }
+    }
   ],
+  "valuation_policy": {
+    "graham_basis_note": "Synthetic explanation of the Graham coefficient and its test-only limitations.",
+    "dcf_review_note": "Synthetic DCF review discipline covering scenarios, assumptions, and rejection of unsupported values.",
+    "dcf_required_assumptions": ["forecast_period_years", "base_free_cash_flow", "growth_rates", "discount_rate", "terminal_growth_rate", "net_debt", "diluted_shares", "margin_of_safety"]
+  },
   "market_cap_bands_crore": {"large_min": "20000", "mid_min": "5000", "small_min": "500", "micro_min": "50"},
+  "market_cap_band_note": "Synthetic rationale for deterministic market-cap category tests only.",
+  "microcap_adjustment_note": "Synthetic rationale for deterministic red and green adjustment tests only.",
   "microcap_adjustments": {
     "applies_below_crore": "500",
     "red_flag_points": 2,

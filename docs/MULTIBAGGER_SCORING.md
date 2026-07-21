@@ -8,17 +8,44 @@ The score uses 1 for the strongest reviewed evidence and 10 for the weakest. It 
 
 ## Methodology lifecycle
 
-The repository ships a reviewed-structure template at `config/multibagger-methodology.example.json`, but it is not active and cannot be installed unchanged. To activate it:
+The repository ships a structured template at `config/multibagger-methodology.example.json`, but it is deliberately unready and cannot be installed unchanged.
 
 1. Apply `database/migrations/005_multibagger_scoring.sql` to an existing database.
 2. Copy the example to the ignored `config/multibagger-methodology.local.json`.
-3. Review every factor definition, weight, market-cap band, adjustment, and valuation assumption.
-4. Replace the reviewer placeholders, write a specific verification note, set `approved_for_use` to `true`, and run `php cron/install-multibagger-methodology.php config/multibagger-methodology.local.json`.
-5. Record the printed version and SHA-256.
+3. Review every factor definition, evidence requirement, grade anchor, weight, market-cap band, adjustment, and valuation assumption.
+4. Replace every placeholder but keep `approved_for_use` as `false` while review is incomplete.
+5. Run the non-mutating readiness check:
 
-Changed content requires a new version. Previous methodologies and score snapshots remain stored. The installer locks score direction to `1_best_10_weakest`, weights to exactly 100%, alert maximum to 4, and dual valuation to required.
+```sh
+php cron/check-multibagger-methodology.php config/multibagger-methodology.local.json
+```
 
-## Twelve-factor scorecard
+6. Resolve every `[BLOCKED]` item. Warnings require an explicit review decision but do not alter the database.
+7. After independent approval, set `approved_for_use` to `true` and run the readiness check again.
+8. Activate only a file reported as `[READY]`:
+
+```sh
+php cron/install-multibagger-methodology.php config/multibagger-methodology.local.json
+```
+
+9. Record the printed version and SHA-256, then run the full tests and health check.
+
+Changed content requires a new version. Previous methodologies and score snapshots remain stored. The installer locks score direction to `1_best_10_weakest`, weights to exactly 100%, alert maximum to 4, dual valuation to required, official sources to required, media sources to prohibited, and same-period Sharia passage to required.
+
+## Auditable factor rubric
+
+Every factor must retain:
+
+- a precise description;
+- at least two explicit evidence requirements;
+- a required integer weight;
+- grade anchors for 1, 4, 7, and 10;
+- a human evidence note meeting the active methodology's minimum length;
+- either a stored exchange filing or an allowed official URL.
+
+The grade anchors reduce arbitrary scoring. Grades between anchors remain reviewer judgments, but the evidence note must explain the interpolation. The factor definitions, evidence requirements, anchors, weights, and review-scope rules are included in the methodology SHA-256 identity.
+
+The production template contains twelve factors:
 
 | Factor | Weight |
 |---|---:|
@@ -35,9 +62,13 @@ Changed content requires a new version. Previous methodologies and score snapsho
 | Official macro tailwind | 6% |
 | Relative valuation ratios | 6% |
 
-Each factor receives a human-reviewed grade from 1 to 10 plus an evidence note and either a stored exchange filing PDF or an allowed official URL. Macro evidence is stricter: it must reference a current human-approved strong/moderate review of a stored PIB, SEBI, RBI, MCA, or Union Budget announcement. The official URL is copied from that immutable announcement.
-
 The original [Piotroski research publication](https://www.gsb.stanford.edu/faculty-research/publications/value-investing-use-historical-financial-statement-information) studied a historical financial-statement heuristic in a high book-to-market setting. HalalPulse therefore treats the F-Score as one weighted factor, not a universal predictor or stand-alone buy signal.
+
+## Official evidence boundary
+
+Each factor receives a human-reviewed grade plus an evidence note and either a stored exchange filing PDF or an allowed official URL. Macro evidence is stricter: it must reference a current human-approved strong/moderate review of a stored PIB, SEBI, RBI, MCA, or Union Budget announcement. The official URL is copied from that immutable announcement.
+
+The methodology must keep `official_sources_only=true`, `media_sources_allowed=false`, and `same_period_sharia_pass_required=true`. These are activation gates, not optional preferences.
 
 ## Exact score calculation
 
@@ -45,19 +76,30 @@ For completed required factors:
 
 `weighted score = sum(factor grade × integer weight) / 100`
 
-The displayed final score uses exact integer half-up rounding. No binary floating-point calculation is used. Micro/nano adjustments are applied only when reviewed market capitalization is below ₹500 crore:
+The displayed final score uses exact integer half-up rounding. No binary floating-point calculation is used. Micro/nano adjustments are applied only when reviewed market capitalization is below the configured threshold:
 
-- each selected red flag adds 2;
-- each selected green flag subtracts 1;
+- each selected red flag adds the configured red-flag points;
+- each selected green flag subtracts the configured green-flag points;
 - final score is capped to the 1–10 range.
 
-The stored risk snapshot identifies whether adjustments were applied and preserves selected flags. Market-cap categories are: large ≥₹20,000 crore, mid ≥₹5,000 crore, small ≥₹500 crore, micro ≥₹50 crore, and nano below ₹50 crore.
+The stored risk snapshot identifies whether adjustments were applied and preserves selected flags. Market-cap categories, their rationale, and the microcap adjustment rationale are part of the methodology definition and hash. This prevents silent category or penalty changes.
 
 ## Dual valuation
 
 The engine calculates the configured Graham Number using exact `bcmath` square-root arithmetic and stores the administrator-supplied DCF value with its assumptions. It sets `undervalued_by_both` only when current price is no higher than both calculated Graham value and reviewed DCF value. Disagreement does not receive an undervalued label.
 
-DCF is assumption-sensitive. The assumptions note is mandatory, as are a currency, positive EPS, positive book value per share, positive DCF value, current price, evidence note, and allowed official source URL.
+The methodology must document why its Graham coefficient is used and retain a DCF review policy. At minimum, the DCF policy requires:
+
+- forecast period;
+- base free cash flow;
+- growth rates;
+- discount rate;
+- terminal growth rate;
+- net debt;
+- diluted shares;
+- margin of safety.
+
+DCF is assumption-sensitive. The active methodology controls the minimum DCF assumptions-note length. Missing, brief, non-positive, or unsupported valuation evidence produces `insufficient`, not a score.
 
 ## Alert gate
 
@@ -72,4 +114,4 @@ This records eligibility. The separate delivery command rechecks active policies
 
 ## Current automation boundary
 
-Milestone 9 retains human factor/government decisions and adds a separate idempotent Telegram delivery boundary. Provider acceptance is audited separately and never changes the immutable score.
+HalalPulse automates exact validation, weighted arithmetic, methodology hashing, allowed-source checks, and alert eligibility. It does not invent grades, DCF assumptions, governance conclusions, macro transmission, or future returns. These remain evidence-backed human review decisions.

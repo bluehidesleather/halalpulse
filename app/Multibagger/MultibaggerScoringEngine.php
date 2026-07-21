@@ -23,6 +23,7 @@ final readonly class MultibaggerScoringEngine
             return $this->insufficient(['A current Sharia pass under the active Sharia policy is required.']);
         }
 
+        $factorEvidenceMinimum = (int) ($methodology->definition['review_scope']['factor_evidence_note_min_chars'] ?? 20);
         $factorResults = [];
         $reasons = [];
         $weightedSum = 0;
@@ -57,7 +58,7 @@ final readonly class MultibaggerScoringEngine
                 $documentId === null && $evidenceUrl === ''
                 || $evidenceUrl !== '' && !ResearchEvidenceUrl::isAllowed($evidenceUrl)
             );
-            if (mb_strlen($evidenceNote) < 3 || $macroEvidenceInvalid || $generalEvidenceInvalid) {
+            if (mb_strlen($evidenceNote) < $factorEvidenceMinimum || $macroEvidenceInvalid || $generalEvidenceInvalid) {
                 $reasons[] = "Official evidence is invalid or missing for {$factor['label']}.";
                 continue;
             }
@@ -81,6 +82,7 @@ final readonly class MultibaggerScoringEngine
                     return $factor['required'];
                 }
             }
+
             return false;
         }));
         if ($completedRequired !== $requiredCount) {
@@ -141,7 +143,13 @@ final readonly class MultibaggerScoringEngine
             if ($this->math->compare($eps, '0') <= 0 || $this->math->compare($bookValue, '0') <= 0 || $this->math->compare($dcfValue, '0') <= 0 || $this->math->compare($currentPrice, '0') <= 0) {
                 throw new \InvalidArgumentException();
             }
-            if (preg_match('/^[A-Z]{3}$/D', $currency) !== 1 || mb_strlen($assumptions) < 10 || mb_strlen($evidenceNote) < 3 || !ResearchEvidenceUrl::isAllowed($evidenceUrl)) {
+            $factorEvidenceMinimum = (int) ($methodology->definition['review_scope']['factor_evidence_note_min_chars'] ?? 20);
+            $valuationAssumptionsMinimum = (int) ($methodology->definition['review_scope']['valuation_assumptions_note_min_chars'] ?? 40);
+            if (preg_match('/^[A-Z]{3}$/D', $currency) !== 1
+                || mb_strlen($assumptions) < $valuationAssumptionsMinimum
+                || mb_strlen($evidenceNote) < $factorEvidenceMinimum
+                || !ResearchEvidenceUrl::isAllowed($evidenceUrl)
+            ) {
                 throw new \InvalidArgumentException();
             }
             $graham = $this->math->squareRoot($this->math->multiply($methodology->definition['graham_coefficient'], $this->math->multiply($eps, $bookValue)));
@@ -179,7 +187,8 @@ final readonly class MultibaggerScoringEngine
         }
         $evidenceNote = trim((string) ($row['evidence_note'] ?? ''));
         $evidenceUrl = (string) ($row['evidence_source_url'] ?? '');
-        if (mb_strlen($evidenceNote) < 3 || !ResearchEvidenceUrl::isAllowed($evidenceUrl)) {
+        $factorEvidenceMinimum = (int) ($methodology->definition['review_scope']['factor_evidence_note_min_chars'] ?? 20);
+        if (mb_strlen($evidenceNote) < $factorEvidenceMinimum || !ResearchEvidenceUrl::isAllowed($evidenceUrl)) {
             $reasons[] = 'Market-cap risk evidence is invalid or missing.';
             return null;
         }
