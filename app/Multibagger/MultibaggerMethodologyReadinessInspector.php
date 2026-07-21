@@ -77,8 +77,8 @@ final class MultibaggerMethodologyReadinessInspector
             if (!is_int($factorNoteMinimum) || $factorNoteMinimum < 20 || $factorNoteMinimum > 500) {
                 $errors[] = 'review_scope.factor_evidence_note_min_chars must be an integer from 20 to 500.';
             }
-            if (!is_int($valuationNoteMinimum) || $valuationNoteMinimum < 40 || $valuationNoteMinimum > 1000) {
-                $errors[] = 'review_scope.valuation_assumptions_note_min_chars must be an integer from 40 to 1000.';
+            if (!is_int($valuationNoteMinimum) || $valuationNoteMinimum < 20 || $valuationNoteMinimum > 1000) {
+                $errors[] = 'review_scope.valuation_assumptions_note_min_chars must be an integer from 20 to 1000.';
             }
             foreach (['official_sources_only', 'same_period_sharia_pass_required'] as $key) {
                 if (($reviewScope[$key] ?? null) !== true) {
