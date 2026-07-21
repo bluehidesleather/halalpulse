@@ -19,6 +19,7 @@ $commands = [
     'HTTP request security tests' => [$php, $root . '/tests/http-request-security.php'],
     'official evidence URL security tests' => [$php, $root . '/tests/official-url-security.php'],
     'Telegram transport security tests' => [$php, $root . '/tests/telegram-security.php'],
+    'light luxury design system tests' => [$php, $root . '/tests/design-system.php'],
     'account session revocation integration' => [$php, $root . '/tests/account-session-revocation-db.php'],
     'public repository safety audit' => [$php, $root . '/cron/audit-repository.php'],
     'deployment health check' => [$php, $root . '/cron/healthcheck.php'],
