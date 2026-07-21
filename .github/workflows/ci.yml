@@ -67,6 +67,7 @@ jobs:
           php tests/screening-ranking.php
           php tests/sharia-policy-readiness.php
           php tests/sharia-evidence-readiness.php
+          php tests/multibagger-methodology-readiness.php
 
       - name: Verify NSE prohibited-activity exclusion rule
         run: |
