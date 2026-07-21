@@ -91,7 +91,7 @@ Page::begin(
                 <?php foreach ($companies as $company): ?>
                     <?php $status = (string) ($company['screening_status'] ?? 'not_screened'); ?>
                     <tr>
-                        <td><span class="exchange-badge"><?= Page::escape($company['exchange']) ?></span><a class="table-title" href="/sharia-company.php?id=<?= Page::escape($company['id']) ?>"><strong><?= Page::escape($company['symbol']) ?></strong></a><small><?= Page::escape($company['company_name']) ?></small></td>
+                        <td><span class="exchange-badge"><?= Page::escape($company['exchange']) ?></span><a class="table-title" href="/sharia-company.php?id=<?= Page::escape($company['id']) ?>"><strong><?= Page::escape($company['symbol']) ?></strong></a><small><?= Page::escape($company['company_name']) ?></small><small><a href="/sharia-candidates.php?id=<?= Page::escape($company['id']) ?>">Review structured XBRL evidence</a></small></td>
                         <td><span class="status status-<?= Page::escape($company['activity_status'] ?? 'pending') ?>"><?= Page::escape(ucfirst((string) ($company['activity_status'] ?? 'pending'))) ?></span></td>
                         <td><span class="status status-<?= Page::escape($status) ?>"><?= Page::escape(ucfirst(str_replace('_', ' ', $status))) ?></span></td>
                         <td><?= $company['compliance_rank'] === null ? '—' : Page::escape($company['compliance_rank']) . ' / 5' ?></td>
