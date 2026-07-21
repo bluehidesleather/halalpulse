@@ -64,6 +64,23 @@ jobs:
       - name: Run dependency-free test suite
         run: php tests/run.php
 
+      - name: Verify NSE prohibited-activity exclusion rule
+        run: |
+          php -r '
+            require "app/bootstrap.php";
+            $banking = \HalalPulse\Nse\NseActivityExclusionService::reasonForFilename(
+                "INTEGRATED_FILING_BANKING_1697532_20072026080218_WEB.xml"
+            );
+            $general = \HalalPulse\Nse\NseActivityExclusionService::reasonForFilename(
+                "INTEGRATED_FILING_INDAS_1697533_20072026080318_WEB.xml"
+            );
+            if ($banking === null || $general !== null) {
+                fwrite(STDERR, "NSE activity exclusion rule failed." . PHP_EOL);
+                exit(1);
+            }
+            echo "NSE activity exclusion rule passed." . PHP_EOL;
+          '
+
       - name: Decode JSON fixtures and example policies
         run: |
           find config tests/fixtures -type f -name '*.json' -print0 \
@@ -74,13 +91,16 @@ jobs:
                 echo "Valid JSON: {$path}" . PHP_EOL;
               '
 
-      - name: Import the canonical MySQL schema
+      - name: Import the canonical MySQL schema and latest migration
         env:
           MYSQL_PWD: halalpulse_ci
         run: |
           mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test < database/schema.sql
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test < database/migrations/010_nse_activity_exclusions.sql
           table_count="$(mysql --protocol=TCP -N -B -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'halalpulse_test';")"
+          status_type="$(mysql --protocol=TCP -N -B -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test -e "SELECT COLUMN_TYPE FROM information_schema.columns WHERE table_schema = 'halalpulse_test' AND table_name = 'nse_integrated_feed_items' AND column_name = 'status';")"
           test "$table_count" -eq 29
+          case "$status_type" in *excluded*) ;; *) exit 1 ;; esac
 
       - name: Create isolated CI configuration
         run: |
