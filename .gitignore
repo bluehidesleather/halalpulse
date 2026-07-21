@@ -17,6 +17,8 @@
 !/storage/documents/.gitkeep
 /storage/xbrl/*
 !/storage/xbrl/.gitkeep
+/storage/backups/*
+!/storage/backups/.gitkeep
 
 # Test and coverage output
 /.phpunit.cache/

@@ -18,7 +18,7 @@ jobs:
   validate:
     name: PHP 8.3 and MySQL 8 validation
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     services:
       mysql:
@@ -56,6 +56,10 @@ jobs:
                 fwrite(STDERR, "Missing PHP extensions: " . implode(", ", $missing) . PHP_EOL);
                 exit(1);
             }
+            if (!in_array("aes-256-gcm", array_map("strtolower", openssl_get_cipher_methods()), true)) {
+                fwrite(STDERR, "AES-256-GCM is unavailable." . PHP_EOL);
+                exit(1);
+            }
           '
 
       - name: Lint PHP files
@@ -68,6 +72,9 @@ jobs:
           php tests/sharia-policy-readiness.php
           php tests/sharia-evidence-readiness.php
           php tests/multibagger-methodology-readiness.php
+          php tests/multibagger-evidence-readiness.php
+          php tests/backup-encryption.php
+          php tests/operations-readiness.php
 
       - name: Verify NSE prohibited-activity exclusion rule
         run: |
@@ -114,6 +121,9 @@ jobs:
 
       - name: Create isolated CI configuration
         run: |
+          mkdir -p storage/logs storage/documents storage/xbrl storage/backups
+          git config core.fileMode false
+          chmod +x bin/mysqldump-no-tablespaces
           php -r '
             $config = require "config/config.example.php";
             $config["app"]["environment"] = "testing";
@@ -124,11 +134,18 @@ jobs:
             $config["database"]["user"] = "halalpulse";
             $config["database"]["password"] = "halalpulse_ci";
             $config["documents"]["storage_path"] = getcwd() . "/storage/documents";
+            $config["sources"]["nse_integrated_rss"]["storage_path"] = getcwd() . "/storage/xbrl";
+            $config["backups"]["enabled"] = true;
+            $config["backups"]["storage_path"] = getcwd() . "/storage/backups";
+            $config["backups"]["encryption_passphrase"] = "ci-only-backup-passphrase-with-sufficient-length";
+            $config["backups"]["mysqldump_binary"] = getcwd() . "/bin/mysqldump-no-tablespaces";
+            $config["backups"]["tar_binary"] = "/usr/bin/tar";
             file_put_contents(
                 "config/config.local.php",
                 "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($config, true) . ";\n",
             );
           '
+          chmod 600 config/config.local.php
 
       - name: Verify idempotent backfill and evidence periods
         env:
@@ -185,6 +202,21 @@ jobs:
           candidate_count="$(mysql --protocol=TCP -N -B -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test -e "SELECT COUNT(*) FROM sharia_input_candidates WHERE source_fact_name='Income' AND candidate_value=123456789;")"
           test "$candidate_count" -eq 1
           php tests/sharia-evidence-readiness-db.php
+          php tests/multibagger-evidence-readiness-db.php
+
+      - name: Verify encrypted backup lifecycle
+        run: |
+          set -o pipefail
+          php cron/create-backup.php | tee /tmp/halalpulse-backup.json
+          php cron/check-backups.php --decrypt
+          backup_path="$(php -r '$v=json_decode((string)file_get_contents("/tmp/halalpulse-backup.json"),true,512,JSON_THROW_ON_ERROR);echo $v["path"];')"
+          rm -rf /tmp/halalpulse-restore-test
+          php cron/extract-backup.php "$backup_path" /tmp/halalpulse-restore-test --confirm-isolated-extraction
+          test -s /tmp/halalpulse-restore-test/database.sql.gz
+          test -s /tmp/halalpulse-restore-test/private-files.tar.gz
+          test -s /tmp/halalpulse-restore-test/manifest.json
+          gzip -t /tmp/halalpulse-restore-test/database.sql.gz
+          tar -tzf /tmp/halalpulse-restore-test/private-files.tar.gz >/dev/null
 
       - name: Run deployment health check
         run: php cron/healthcheck.php

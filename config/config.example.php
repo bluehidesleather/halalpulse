@@ -141,6 +141,23 @@ return [
             'max_response_bytes' => 1048576,
         ],
     ],
+    'backups' => [
+        // Keep false until a unique private encryption passphrase is stored in config.local.php.
+        'enabled' => false,
+        'storage_path' => dirname(__DIR__) . '/storage/backups',
+        'retention_days' => 14,
+        'maximum_age_hours' => 30,
+        'encryption_passphrase' => '',
+        // This wrapper adds --no-tablespaces so a least-privilege database account can create a logical backup.
+        'mysqldump_binary' => dirname(__DIR__) . '/bin/mysqldump-no-tablespaces',
+        'tar_binary' => '/usr/bin/tar',
+        // Paths are relative to the project root and are encrypted before the final backup is published.
+        'include_paths' => [
+            'config/config.local.php',
+            'storage/documents',
+            'storage/xbrl',
+        ],
+    ],
     'documents' => [
         'storage_path' => dirname(__DIR__) . '/storage/documents',
         'batch_size' => 3,

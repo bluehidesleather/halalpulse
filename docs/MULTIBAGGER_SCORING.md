@@ -70,6 +70,31 @@ Each factor receives a human-reviewed grade plus an evidence note and either a s
 
 The methodology must keep `official_sources_only=true`, `media_sources_allowed=false`, and `same_period_sharia_pass_required=true`. These are activation gates, not optional preferences.
 
+## Company-and-period evidence readiness
+
+The company review page derives reporting periods from actual stored financial results, Sharia screenings, factor reviews, valuation reviews, risk reviews, and previous score records. It does not silently default a review to today's date when a real filing period exists.
+
+Before an immutable score can be recorded, the readiness service verifies all of the following for the selected period:
+
+- the active methodology is still active and hash-verified;
+- a Sharia screening passed for the same company and period under the active Sharia policy;
+- every required factor has one current review;
+- every factor grade is an integer from 1 to 10;
+- each evidence note meets the active methodology's minimum length;
+- each non-macro factor links an allowed official URL or stored company filing;
+- the macro factor links a current human-approved strong/moderate government review;
+- EPS, book value per share, DCF value, and current price are positive exact decimals;
+- DCF assumptions meet the methodology's minimum detail requirement;
+- valuation and risk evidence use allowed official sources;
+- market capitalization is a positive exact crore value; and
+- every selected red or green flag exists in the active methodology.
+
+The interface lists exact blockers and disables the calculation button until the evidence set is ready. The POST handler independently repeats the same assessment, so a crafted request cannot bypass the gate.
+
+A pending, missing, stale, invalid, or unsupported item does not create an immutable `insufficient` score record. It remains visible as unfinished review work. Only a complete `scored` result is written to score history.
+
+Graham/DCF disagreement is different from missing evidence. A complete evidence set may still be scored when the two valuation methods do not both support the current price, but the interface surfaces a warning and `undervalued_by_both` remains false.
+
 ## Exact score calculation
 
 For completed required factors:
@@ -99,7 +124,7 @@ The methodology must document why its Graham coefficient is used and retain a DC
 - diluted shares;
 - margin of safety.
 
-DCF is assumption-sensitive. The active methodology controls the minimum DCF assumptions-note length. Missing, brief, non-positive, or unsupported valuation evidence produces `insufficient`, not a score.
+DCF is assumption-sensitive. The active methodology controls the minimum DCF assumptions-note length. Missing, brief, non-positive, or unsupported valuation evidence produces a readiness blocker, not a score.
 
 ## Alert gate
 
@@ -114,4 +139,4 @@ This records eligibility. The separate delivery command rechecks active policies
 
 ## Current automation boundary
 
-HalalPulse automates exact validation, weighted arithmetic, methodology hashing, allowed-source checks, and alert eligibility. It does not invent grades, DCF assumptions, governance conclusions, macro transmission, or future returns. These remain evidence-backed human review decisions.
+HalalPulse automates exact validation, weighted arithmetic, methodology hashing, allowed-source checks, readiness reporting, and alert eligibility. It does not invent grades, DCF assumptions, governance conclusions, macro transmission, or future returns. These remain evidence-backed human review decisions.

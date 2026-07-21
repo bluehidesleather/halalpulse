@@ -3,8 +3,8 @@
 
 declare(strict_types=1);
 
-use HalalPulse\Database;
 use HalalPulse\Alerts\AlertConfiguration;
+use HalalPulse\Database;
 
 $config = require dirname(__DIR__) . '/app/bootstrap.php';
 $documentPath = (string) $config->get('documents.storage_path', '');
@@ -22,6 +22,27 @@ if ($alertConfig->enabled) {
         $alertConfigurationReady = false;
     }
 }
+
+$backupEnabled = $config->get('backups.enabled', false) === true;
+$backupPath = (string) $config->get('backups.storage_path', HALALPULSE_ROOT . '/storage/backups');
+$backupNormalized = str_replace('\\', '/', $backupPath);
+$webNormalized = is_string($webRealPath) ? str_replace('\\', '/', $webRealPath) : '';
+$backupOutsideWeb = $backupNormalized !== ''
+    && $webNormalized !== ''
+    && $backupNormalized !== $webNormalized
+    && !str_starts_with(rtrim($backupNormalized, '/') . '/', rtrim($webNormalized, '/') . '/');
+$backupParent = dirname($backupPath);
+$backupStorageWritable = is_dir($backupPath) ? is_writable($backupPath) : is_dir($backupParent) && is_writable($backupParent);
+$backupConfigurationReady = !$backupEnabled || (
+    strlen((string) $config->get('backups.encryption_passphrase', '')) >= 20
+    && $backupOutsideWeb
+    && $backupStorageWritable
+    && is_file((string) $config->get('backups.mysqldump_binary', '/usr/bin/mysqldump'))
+    && is_executable((string) $config->get('backups.mysqldump_binary', '/usr/bin/mysqldump'))
+    && is_file((string) $config->get('backups.tar_binary', '/usr/bin/tar'))
+    && is_executable((string) $config->get('backups.tar_binary', '/usr/bin/tar'))
+    && in_array('aes-256-gcm', array_map('strtolower', openssl_get_cipher_methods()), true)
+);
 
 $checks = [
     'php_version' => version_compare(PHP_VERSION, '8.3.0', '>='),
@@ -54,6 +75,7 @@ $checks = [
     'hourly_bse_polling' => (int) $config->get('polling.bse_interval_seconds') === 3600,
     'hourly_government_polling' => (int) $config->get('government_polling.interval_seconds') === 3600,
     'alert_configuration' => $alertConfigurationReady,
+    'backup_configuration' => $backupConfigurationReady,
 ];
 
 $databaseError = null;
