@@ -43,6 +43,9 @@ $backupConfigurationReady = !$backupEnabled || (
     && is_executable((string) $config->get('backups.tar_binary', '/usr/bin/tar'))
     && in_array('aes-256-gcm', array_map('strtolower', openssl_get_cipher_methods()), true)
 );
+$loginWindowSeconds = max(1, (int) $config->get('security.login_window_seconds', 900));
+$loginRetentionSeconds = (int) $config->get('security.login_attempt_retention_seconds', 604800);
+$loginPruneMaximumRows = (int) $config->get('security.login_attempt_prune_max_rows', 5000);
 
 $checks = [
     'php_version' => version_compare(PHP_VERSION, '8.3.0', '>='),
@@ -57,6 +60,9 @@ $checks = [
     'security_app_key' => strlen((string) $config->get('security.app_key', '')) >= 32,
     'secure_session_cookie' => $config->get('app.force_https', true) === true,
     'session_rotation_interval' => (int) $config->get('security.session_rotation_seconds', 900) >= 300,
+    'login_attempt_retention' => $loginRetentionSeconds >= max(3600, $loginWindowSeconds * 2)
+        && $loginRetentionSeconds <= 31536000,
+    'login_attempt_prune_limit' => $loginPruneMaximumRows >= 1 && $loginPruneMaximumRows <= 10000,
     'private_document_storage' => is_string($documentRealPath)
         && is_writable($documentRealPath)
         && is_string($webRealPath)
