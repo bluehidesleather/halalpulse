@@ -72,14 +72,16 @@ $assert($rejects(static fn () => $makeConfiguration(['maxRequestBytes' => 65_537
 $assert($rejects(static fn () => $makeConfiguration(['maxResponseBytes' => 4_194_305])->assertTransportReady()), 'Telegram response limits above 4 MiB are rejected.');
 $assert($rejects(static fn () => $makeConfiguration(['maxHeaderBytes' => 131_073])->assertTransportReady()), 'Telegram response-header limits above 128 KiB are rejected.');
 
-$policy = new TelegramRequestPolicy($token, 128);
+$policy = new TelegramRequestPolicy($token, 1024);
 $assert(str_ends_with($policy->endpoint('sendMessage'), '/sendMessage'), 'The sendMessage API method is explicitly allowed.');
 $assert(str_ends_with($policy->endpoint('getUpdates'), '/getUpdates'), 'The getUpdates API method is explicitly allowed.');
 $assert($rejects(static fn () => $policy->endpoint('../getMe')), 'Unapproved Telegram API methods and path traversal are rejected.');
 $encoded = $policy->encodeParameters(['chat_id' => '123', 'text' => 'Synthetic message']);
 $assert(str_contains($encoded, 'Synthetic message'), 'Telegram parameters are encoded as bounded JSON.');
-$assert($rejects(static fn () => $policy->encodeParameters(['text' => str_repeat('x', 200)])), 'Encoded Telegram requests above the configured limit are rejected.');
+$assert($rejects(static fn () => $policy->encodeParameters(['text' => str_repeat('x', 2000)])), 'Encoded Telegram requests above the configured limit are rejected.');
 $assert($rejects(static fn () => $policy->encodeParameters(['text' => "\xB1\x31"])), 'Invalid UTF-8 Telegram parameters fail closed.');
+$assert($rejects(static fn () => new TelegramRequestPolicy('invalid', 1024)), 'The standalone Telegram request policy validates its token.');
+$assert($rejects(static fn () => new TelegramRequestPolicy($token, 1023)), 'The standalone Telegram request policy validates its request-size floor.');
 
 $description = "Provider exposed {$token}\r\nwith\tcontrol bytes";
 $safeDescription = $policy->safeProviderDescription($description);
