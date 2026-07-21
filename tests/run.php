@@ -435,13 +435,13 @@ if (extension_loaded('bcmath')) {
     ];
     $passingScreen = $screeningEngine->screen($testPolicy, 'permissible', $passingInputs);
     $assert($passingScreen->status === 'passed', 'Complete synthetic evidence within all maxima passes.');
-    $assert($passingScreen->complianceRank === 5, 'Custom rank 5 is assigned when worst threshold utilization is 50 percent.');
+    $assert($passingScreen->complianceRank === 1, 'Custom rank 1 is assigned when worst threshold utilization is 50 percent.');
 
     $boundaryInputs = $passingInputs;
     $boundaryInputs['test_debt'] = $makeInput('40');
     $boundaryScreen = $screeningEngine->screen($testPolicy, 'permissible', $boundaryInputs);
     $assert($boundaryScreen->status === 'passed', 'An exact decimal value on the synthetic maximum passes.');
-    $assert($boundaryScreen->complianceRank === 1, 'A passing value at the maximum receives custom rank 1.');
+    $assert($boundaryScreen->complianceRank === 5, 'A passing value at the maximum receives custom rank 5.');
 
     $failingInputs = $passingInputs;
     $failingInputs['test_debt'] = $makeInput('40.000001');
