@@ -69,7 +69,7 @@ final class BackupEncryptor
                     throw new RuntimeException('Backup encryption failed.');
                 }
 
-                $record = $nonce . $tag . pack('N', strlen($cipher)) . $cipher;
+                $record = pack('N', strlen($cipher)) . $nonce . $tag . $cipher;
                 $this->writeAll($output, $record);
                 hash_update($hash, $record);
                 $bytes += strlen($record);
