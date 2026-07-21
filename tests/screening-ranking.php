@@ -91,5 +91,25 @@ $unsafeInference = new IntegratedFinancialResult(
 );
 $assert($mapper->map($unsafeInference) === [], 'Other income and a debt-equity ratio are never reinterpreted as prohibited income or interest-bearing debt.');
 
+$excessPrecision = new IntegratedFinancialResult(
+    taxonomyUri: 'https://www.sebi.gov.in/xbrl/synthetic.xsd',
+    metadata: [
+        'symbol' => 'PRECISION',
+        'company_name' => 'Precision Limited',
+        'period_end' => '2026-06-30',
+        'currency' => 'INR',
+    ],
+    metrics: [],
+    facts: [[
+        'name' => 'Income',
+        'context_ref' => 'OneD',
+        'unit_ref' => 'INR',
+        'decimals' => '7',
+        'value' => '1.1234567',
+        'occurrence' => 1,
+    ]],
+);
+$assert($mapper->map($excessPrecision) === [], 'A candidate outside the exact DECIMAL(36,6) boundary is rejected instead of rounded.');
+
 echo "\n{$passed} passed, {$failed} failed.\n";
 exit($failed === 0 ? 0 : 1);
