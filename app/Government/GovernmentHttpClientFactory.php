@@ -23,6 +23,7 @@ final class GovernmentHttpClientFactory
             timeoutSeconds: (int) $config->get('government_polling.request_timeout_seconds', 20),
             userAgent: (string) $config->get('government_polling.user_agent', 'HalalPulse/0.9'),
             maxResponseBytes: (int) $config->get('government_polling.max_response_bytes', 8_388_608),
+            maxHeaderBytes: (int) $config->get('government_polling.max_header_bytes', 65_536),
         );
     }
 }
