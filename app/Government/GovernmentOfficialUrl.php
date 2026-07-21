@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace HalalPulse\Government;
 
+use HalalPulse\Support\OfficialHttpsUrl;
+
 final class GovernmentOfficialUrl
 {
     /** @var array<string, list<string>> */
@@ -17,19 +19,6 @@ final class GovernmentOfficialUrl
 
     public static function isAllowed(string $url, string $source): bool
     {
-        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
-            return false;
-        }
-
-        $parts = parse_url($url);
-        if (!is_array($parts) || strtolower((string) ($parts['scheme'] ?? '')) !== 'https') {
-            return false;
-        }
-        if (isset($parts['user']) || isset($parts['pass']) || isset($parts['port'])) {
-            return false;
-        }
-
-        $host = strtolower((string) ($parts['host'] ?? ''));
-        return in_array($host, self::HOSTS[$source] ?? [], true);
+        return OfficialHttpsUrl::isAllowed($url, self::HOSTS[$source] ?? []);
     }
 }
