@@ -77,6 +77,13 @@ $futureTimestamp = $policy->evaluate([
 ], $now);
 $assert($futureTimestamp['expired'] && $futureTimestamp['reason'] === 'invalid_timestamps', 'Impossible future authentication timestamps fail closed.');
 
+$contradictoryTimestamp = $policy->evaluate([
+    'created_at' => $now - 100,
+    'last_activity_at' => $now - 10,
+    'last_regenerated_at' => $now - 200,
+], $now);
+$assert($contradictoryTimestamp['expired'] && $contradictoryTimestamp['reason'] === 'invalid_timestamps', 'A regeneration timestamp before authentication creation fails closed.');
+
 $disabledRotation = (new SessionSecurityPolicy(1800, 43200, 0))->evaluate([
     'created_at' => $now - 1200,
     'last_activity_at' => $now - 10,
