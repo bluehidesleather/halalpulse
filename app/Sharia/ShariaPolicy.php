@@ -9,7 +9,17 @@ use InvalidArgumentException;
 final readonly class ShariaPolicy
 {
     /**
-     * @param list<array{key: string, label: string, numerator_key: string, denominator_key: string, max_percent: string, required: bool}> $ratios
+     * @param list<array{
+     *   key: string,
+     *   label: string,
+     *   numerator_key: string,
+     *   denominator_key: string,
+     *   max_percent: string,
+     *   required: bool,
+     *   source_clause: string,
+     *   numerator_definition: string,
+     *   denominator_definition: string
+     * }> $ratios
      */
     public function __construct(
         public int $id,
