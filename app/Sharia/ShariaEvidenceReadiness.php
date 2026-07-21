@@ -115,10 +115,9 @@ final readonly class ShariaEvidenceReadiness
         sort($result['missing_input_keys']);
 
         foreach ($result['missing_input_keys'] as $key) {
+            $result['blockers'][] = "Required input {$key} is missing for the selected period.";
             if (isset($candidateKeys[$key])) {
-                $result['warnings'][] = "A pending structured candidate may help complete {$key}.";
-            } else {
-                $result['blockers'][] = "Required input {$key} is missing for the selected period.";
+                $result['warnings'][] = "A pending structured candidate may help complete {$key}, but it must be reviewed and accepted first.";
             }
         }
 
@@ -146,8 +145,9 @@ final readonly class ShariaEvidenceReadiness
         return $this->finish($result);
     }
 
-    /** @param array<string, mixed> $result
-     *  @return array<string, mixed>
+    /**
+     * @param array<string, mixed> $result
+     * @return array<string, mixed>
      */
     private function finish(array $result): array
     {
