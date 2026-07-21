@@ -27,6 +27,7 @@ final class Page
         echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
         echo "<title>{$title} · {$appName}</title>";
         echo '<link rel="stylesheet" href="/assets/app.css">';
+        echo '<link rel="stylesheet" href="/assets/operations.css">';
         echo '</head><body class="' . $bodyClass . '">';
 
         if ($user !== null) {
