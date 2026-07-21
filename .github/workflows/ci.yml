@@ -75,6 +75,7 @@ jobs:
           php tests/multibagger-evidence-readiness.php
           php tests/backup-encryption.php
           php tests/operations-readiness.php
+          php tests/repository-safety.php
 
       - name: Verify NSE prohibited-activity exclusion rule
         run: |
@@ -103,6 +104,9 @@ jobs:
                 echo "Valid JSON: {$path}" . PHP_EOL;
               '
 
+      - name: Audit public repository safety
+        run: php cron/audit-repository.php
+
       - name: Import schema and pending production migrations
         env:
           MYSQL_PWD: halalpulse_ci
@@ -122,8 +126,6 @@ jobs:
       - name: Create isolated CI configuration
         run: |
           mkdir -p storage/logs storage/documents storage/xbrl storage/backups
-          git config core.fileMode false
-          chmod +x bin/mysqldump-no-tablespaces
           php -r '
             $config = require "config/config.example.php";
             $config["app"]["environment"] = "testing";
@@ -156,45 +158,45 @@ jobs:
           VALUES ('NSE', 'BACKFILL', 'Backfill Test Limited');
 
           INSERT INTO filings (
-              company_id, exchange, source_id, category, subject, announced_at,
-              payload_hash, raw_payload, processing_status, processed_at
+            company_id, exchange, source_id, category, subject, announced_at,
+            payload_hash, raw_payload, processing_status, processed_at
           ) VALUES (
-              (SELECT id FROM companies WHERE exchange='NSE' AND symbol='BACKFILL'),
-              'NSE', 'nse:backfill-test', 'Financial Results', 'Synthetic backfill result',
-              '2026-07-21 10:00:00', REPEAT('a', 64), JSON_OBJECT('synthetic', TRUE),
-              'processed', CURRENT_TIMESTAMP
+            (SELECT id FROM companies WHERE exchange='NSE' AND symbol='BACKFILL'),
+            'NSE', 'nse:backfill-test', 'Financial Results', 'Synthetic backfill result',
+            '2026-07-21 10:00:00', REPEAT('a', 64), JSON_OBJECT('synthetic', TRUE),
+            'processed', CURRENT_TIMESTAMP
           );
 
           INSERT INTO nse_integrated_feed_items (
-              source_url, source_filename, company_name, description, filing_type,
-              revision_note, published_at, item_hash, raw_item, status, filing_id,
-              taxonomy_uri, first_discovered_at, last_seen_at, processed_at
+            source_url, source_filename, company_name, description, filing_type,
+            revision_note, published_at, item_hash, raw_item, status, filing_id,
+            taxonomy_uri, first_discovered_at, last_seen_at, processed_at
           ) VALUES (
-              'https://nsearchives.nseindia.com/corporate/backfill-test.xml',
-              'INTEGRATED_FILING_INDAS_BACKFILL_WEB.xml', 'Backfill Test Limited',
-              'Synthetic backfill item', 'original', '', '2026-07-21 10:00:00',
-              REPEAT('b', 64), JSON_OBJECT('synthetic', TRUE), 'processed',
-              (SELECT id FROM filings WHERE exchange='NSE' AND source_id='nse:backfill-test'),
-              'https://www.sebi.gov.in/xbrl/synthetic.xsd',
-              CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            'https://nsearchives.nseindia.com/corporate/backfill-test.xml',
+            'INTEGRATED_FILING_INDAS_BACKFILL_WEB.xml', 'Backfill Test Limited',
+            'Synthetic backfill item', 'original', '', '2026-07-21 10:00:00',
+            REPEAT('b', 64), JSON_OBJECT('synthetic', TRUE), 'processed',
+            (SELECT id FROM filings WHERE exchange='NSE' AND source_id='nse:backfill-test'),
+            'https://www.sebi.gov.in/xbrl/synthetic.xsd',
+            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
           );
 
           INSERT INTO financial_results (
-              integrated_item_id, filing_id, company_id, period_end,
-              reporting_period_type, statement_scope, currency, total_income
+            integrated_item_id, filing_id, company_id, period_end,
+            reporting_period_type, statement_scope, currency, total_income
           ) VALUES (
-              (SELECT id FROM nse_integrated_feed_items WHERE source_filename='INTEGRATED_FILING_INDAS_BACKFILL_WEB.xml'),
-              (SELECT id FROM filings WHERE exchange='NSE' AND source_id='nse:backfill-test'),
-              (SELECT id FROM companies WHERE exchange='NSE' AND symbol='BACKFILL'),
-              '2026-06-30', 'quarterly', 'standalone', 'INR', 123456789
+            (SELECT id FROM nse_integrated_feed_items WHERE source_filename='INTEGRATED_FILING_INDAS_BACKFILL_WEB.xml'),
+            (SELECT id FROM filings WHERE exchange='NSE' AND source_id='nse:backfill-test'),
+            (SELECT id FROM companies WHERE exchange='NSE' AND symbol='BACKFILL'),
+            '2026-06-30', 'quarterly', 'standalone', 'INR', 123456789
           );
 
           INSERT INTO xbrl_facts (
-              integrated_item_id, fact_name, context_ref, unit_ref,
-              decimals_value, fact_value, occurrence
+            integrated_item_id, fact_name, context_ref, unit_ref,
+            decimals_value, fact_value, occurrence
           ) VALUES (
-              (SELECT id FROM nse_integrated_feed_items WHERE source_filename='INTEGRATED_FILING_INDAS_BACKFILL_WEB.xml'),
-              'Income', 'OneD', 'INR', '0', '123456789', 1
+            (SELECT id FROM nse_integrated_feed_items WHERE source_filename='INTEGRATED_FILING_INDAS_BACKFILL_WEB.xml'),
+            'Income', 'OneD', 'INR', '0', '123456789', 1
           );
           SQL
           php cron/backfill-sharia-candidates.php --limit=10
