@@ -35,6 +35,13 @@ final readonly class ShariaEvidenceReadiness
     ): array {
         $activityStatus = (string) ($activityReview['activity_status'] ?? 'not_reviewed');
         $acceptedKeys = array_values(array_unique(array_map('strval', array_keys($inputRows))));
+        if ($policy !== null) {
+            $policyKeyLookup = array_fill_keys($policy->inputKeys(), true);
+            $acceptedKeys = array_values(array_filter(
+                $acceptedKeys,
+                static fn (string $key): bool => isset($policyKeyLookup[$key]),
+            ));
+        }
         sort($acceptedKeys);
 
         $candidateKeys = [];
