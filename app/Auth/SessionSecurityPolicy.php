@@ -33,7 +33,15 @@ final readonly class SessionSecurityPolicy
         $createdAt = (int) ($auth['created_at'] ?? 0);
         $lastActivityAt = (int) ($auth['last_activity_at'] ?? 0);
         $lastRegeneratedAt = (int) ($auth['last_regenerated_at'] ?? $createdAt);
-        if ($createdAt <= 0 || $lastActivityAt <= 0 || $createdAt > $now || $lastActivityAt > $now) {
+        $invalidTimestamps = $createdAt <= 0
+            || $lastActivityAt <= 0
+            || $lastRegeneratedAt <= 0
+            || $createdAt > $now
+            || $lastActivityAt > $now
+            || $lastRegeneratedAt > $now
+            || $lastActivityAt < $createdAt
+            || $lastRegeneratedAt < $createdAt;
+        if ($invalidTimestamps) {
             return [
                 'authenticated' => true,
                 'expired' => true,
@@ -64,7 +72,7 @@ final readonly class SessionSecurityPolicy
         }
 
         $rotate = $this->rotationSeconds > 0
-            && ($lastRegeneratedAt <= 0 || $lastRegeneratedAt > $now || ($now - $lastRegeneratedAt) >= $this->rotationSeconds);
+            && ($now - $lastRegeneratedAt) >= $this->rotationSeconds;
 
         return [
             'authenticated' => true,
