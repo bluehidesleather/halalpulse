@@ -26,6 +26,7 @@ final class HttpClientFactory
             timeoutSeconds: (int) $config->get('polling.request_timeout_seconds', 20),
             userAgent: (string) $config->get('polling.user_agent', 'HalalPulse/0.2'),
             maxResponseBytes: (int) $config->get('polling.max_response_bytes', 8_388_608),
+            maxHeaderBytes: (int) $config->get('polling.max_header_bytes', 65_536),
         );
     }
 }
