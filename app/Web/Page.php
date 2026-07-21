@@ -71,6 +71,7 @@ final class Page
             'multibagger' => ['/multibagger.php', 'Potential'],
             'government' => ['/government.php', 'Tailwinds'],
             'alerts' => ['/alerts.php', 'Alerts'],
+            'operations' => ['/operations.php', 'Operations'],
             'settings' => ['/settings.php', 'Security'],
         ];
 
