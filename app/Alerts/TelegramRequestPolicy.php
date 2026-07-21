@@ -15,6 +15,12 @@ final readonly class TelegramRequestPolicy
         private string $botToken,
         private int $maxRequestBytes,
     ) {
+        if (preg_match('/^[1-9][0-9]{5,15}:[A-Za-z0-9_-]{30,100}$/D', $this->botToken) !== 1) {
+            throw new TelegramApiException('Telegram bot token format is invalid.', outcomeKnown: true);
+        }
+        if ($this->maxRequestBytes < 1024 || $this->maxRequestBytes > 65_536) {
+            throw new TelegramApiException('Telegram request-size limit is invalid.', outcomeKnown: true);
+        }
     }
 
     public function endpoint(string $method): string
@@ -44,6 +50,7 @@ final readonly class TelegramRequestPolicy
 
     public function safeProviderDescription(string $description, int $maximumCharacters = 500): string
     {
+        $maximumCharacters = max(50, min(1000, $maximumCharacters));
         $description = str_replace($this->botToken, '[redacted-token]', $description);
         $description = preg_replace('/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/', '', $description) ?? '';
         $description = preg_replace('/[\r\n\t]+/', ' ', $description) ?? '';
