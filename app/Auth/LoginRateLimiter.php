@@ -47,8 +47,6 @@ final class LoginRateLimiter
             'DELETE FROM login_attempts WHERE was_successful = 0 AND identity_hash = :identity_hash'
         );
         $statement->execute(['identity_hash' => $identityHash]);
-
-        $this->pdo->exec("DELETE FROM login_attempts WHERE attempted_at < (CURRENT_TIMESTAMP - INTERVAL 7 DAY)");
     }
 
     private function insertAttempt(string $identityHash, string $ipHash, ?int $userId, bool $successful): void

@@ -1,6 +1,6 @@
 # Authentication and first administrator
 
-Version: 0.5.0
+Version: 0.6.0
 
 HalalPulse is a private personal-use installation. It supports administrator accounts created from the command line and does not expose public registration, invitation, or email-password-reset endpoints.
 
@@ -53,6 +53,25 @@ A successful command-line reset increments the account authentication version. E
 - Sessions expire after 30 minutes of inactivity or 12 hours total by default.
 - Every state-changing form verifies a 256-bit CSRF token.
 - Authenticated pages send no-store caching and restrictive browser security headers.
+- Login-attempt history has a seven-day default retention and is pruned in a bounded maximum of 5,000 oldest rows per maintenance run. The retention can never be configured below twice the active throttling window or below one hour.
+
+## Login-attempt retention
+
+Run the bounded maintenance command daily:
+
+```sh
+php cron/prune-login-attempts.php
+```
+
+The command removes only rows older than `security.login_attempt_retention_seconds`, stops after `security.login_attempt_prune_max_rows`, and returns JSON containing the cutoff and deleted-row count. It does not run an unbounded global delete inside a login request.
+
+A temporary lower batch limit can be supplied safely:
+
+```sh
+php cron/prune-login-attempts.php --limit=1000
+```
+
+Limits below 1 or above 10,000 fail closed. Recent attempts required by the login throttle are preserved.
 
 ## Migration behavior
 
@@ -72,4 +91,4 @@ Do not put the database password in the command line. The MySQL client prompts f
 - Keep PHP `display_errors` off in production and direct errors to a non-public log.
 - The application key must remain stable. Changing it resets login-throttling identity buckets and makes encrypted Telegram recipient addresses unreadable until they are re-registered; it does not invalidate password hashes.
 - Deactivating an administrator in the database causes the next authenticated request to lose access.
-- The health check verifies both the session rotation interval and the `users.auth_version` column.
+- The health check verifies the session rotation interval, login-attempt retention bounds, prune limit, and `users.auth_version` column.

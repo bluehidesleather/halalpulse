@@ -22,7 +22,7 @@ Private, personal-use intelligence platform for detecting new NSE/BSE quarterly-
 
 ## Current milestone
 
-Milestone 19 completes the code-level release and account-security control plane:
+Milestone 20 completes the code-level release, account-security, and bounded-maintenance control plane:
 
 - the multibagger company page discovers real reporting periods and reports exact score blockers;
 - incomplete or stale factor, valuation, risk, macro, or Sharia evidence cannot create an immutable score;
@@ -30,8 +30,9 @@ Milestone 19 completes the code-level release and account-security control plane
 - authenticated backup verification and isolated extraction are available from the command line;
 - an authenticated Operations page reports runtime, source, policy, methodology, backup, and alert readiness;
 - tracked repository content is audited for private configuration, backup material, credentials, production paths, and temporary-domain leakage;
-- authenticated session identifiers rotate periodically without extending idle or absolute lifetimes; and
-- password changes and command-line resets revoke every previously issued browser session.
+- authenticated session identifiers rotate periodically without extending idle or absolute lifetimes;
+- password changes and command-line resets revoke every previously issued browser session; and
+- failed-login history is retained and pruned through a bounded daily maintenance command rather than an unbounded delete during authentication.
 
 The current structured mapper suggests only `total_revenue` from an NSE total-income fact, or a lower-confidence revenue-from-operations fallback. It does not infer interest-bearing debt, deposits, impermissible income, business permissibility, DCF assumptions, governance quality, factor grades, or investment suitability. A pending candidate remains missing evidence until an administrator reviews and accepts it under an active verified policy.
 
@@ -70,7 +71,7 @@ tests/               Dependency-free test harness
 16. Point the permanent HTTPS domain document root at this project's `public_html` directory and sign in.
 17. Run `php cron/probe-sources.php NSE BSE`; enable only adapters that succeed with plausible official records.
 18. Run `php cron/probe-government-sources.php PIB SEBI RBI MCA BUDGET`; enable only each source that succeeds with plausible official records.
-19. Follow `docs/NSE_INTEGRATED_RSS.md`, validate one CLI sync, then configure `sync-nse-integrated.php` every five minutes. Configure enabled legacy filings, government, bounded document, backup, and alert jobs at separate minutes.
+19. Follow `docs/NSE_INTEGRATED_RSS.md`, validate one CLI sync, then configure `sync-nse-integrated.php` every five minutes. Configure enabled legacy filings, government, bounded document, backup, alert, and login-history maintenance jobs at separate minutes.
 20. Follow `docs/ALERT_DELIVERY.md`; keep alerts disabled until the private bot token, `/start` consent, encrypted database recipient, and manual smoke-test gates are complete.
 21. Run `php cron/release-readiness.php` and use the authenticated `/operations.php` dashboard to distinguish completed code from external operational blockers.
 
@@ -93,6 +94,12 @@ php cron/create-backup.php
 php cron/check-backups.php --decrypt
 ```
 
+Bounded login-attempt retention:
+
+```sh
+php cron/prune-login-attempts.php
+```
+
 Production readiness report:
 
 ```sh
@@ -104,7 +111,7 @@ An incomplete readiness report is not automatically a code failure. It identifie
 
 ## Documentation
 
-- `docs/AUTHENTICATION.md` — login threat model, first-admin procedure, password reset, and sessions.
+- `docs/AUTHENTICATION.md` — login threat model, first-admin procedure, password reset, sessions, and bounded login-history retention.
 - `docs/DOCUMENT_PIPELINE.md` — official-document allowlist, private storage, integrity, extraction, and human review.
 - `docs/SHARIA_SCREENING.md` — policy provenance, exact-decimal screening, XBRL candidates, and evidence readiness.
 - `docs/MULTIBAGGER_SCORING.md` — methodology readiness, factor anchors, company evidence readiness, valuation, risks, and alerts.

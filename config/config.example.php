@@ -19,6 +19,8 @@ return [
         'session_rotation_seconds' => 900,
         'login_max_attempts' => 5,
         'login_window_seconds' => 900,
+        'login_attempt_retention_seconds' => 604800,
+        'login_attempt_prune_max_rows' => 5000,
     ],
     'database' => [
         'host' => '127.0.0.1',
