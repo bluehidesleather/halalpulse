@@ -82,7 +82,10 @@ final class ShariaPolicyReadinessInspector
             $errors[] = 'verification_note must document the edition, language, clauses, and review basis.';
         }
 
-        if ($requireApproval && ($input['approved_for_use'] ?? null) !== true) {
+        $approved = $input['approved_for_use'] ?? null;
+        if (!is_bool($approved)) {
+            $errors[] = 'approved_for_use must be a boolean.';
+        } elseif ($requireApproval && !$approved) {
             $errors[] = 'approved_for_use must be true only after independent review is complete.';
         }
 
@@ -91,6 +94,7 @@ final class ShariaPolicyReadinessInspector
             $errors[] = 'ratios must be a non-empty list.';
         } else {
             $seen = [];
+            $requiredCount = 0;
             foreach ($ratios as $index => $ratio) {
                 if (!is_array($ratio)) {
                     $errors[] = "Ratio {$index} must be an object.";
@@ -106,13 +110,39 @@ final class ShariaPolicyReadinessInspector
                     $seen[$key] = true;
                 }
 
-                foreach (['label', 'numerator_key', 'denominator_key', 'source_clause', 'numerator_definition', 'denominator_definition'] as $field) {
+                $textLimits = [
+                    'label' => 191,
+                    'source_clause' => 191,
+                    'numerator_definition' => 1000,
+                    'denominator_definition' => 1000,
+                ];
+                foreach ($textLimits as $field => $maximumLength) {
                     $value = $ratio[$field] ?? null;
                     if (!is_string($value) || trim($value) === '') {
                         $errors[] = "Ratio {$index} {$field} is required.";
-                    } elseif ($this->containsPlaceholder(trim($value))) {
+                    } else {
+                        $value = trim($value);
+                        if (mb_strlen($value) > $maximumLength) {
+                            $errors[] = "Ratio {$index} {$field} exceeds {$maximumLength} characters.";
+                        }
+                        if ($this->containsPlaceholder($value)) {
+                            $errors[] = "Ratio {$index} {$field} still contains a placeholder.";
+                        }
+                    }
+                }
+
+                $numerator = is_string($ratio['numerator_key'] ?? null) ? trim((string) $ratio['numerator_key']) : '';
+                $denominator = is_string($ratio['denominator_key'] ?? null) ? trim((string) $ratio['denominator_key']) : '';
+                foreach (['numerator_key' => $numerator, 'denominator_key' => $denominator] as $field => $value) {
+                    if (preg_match('/^[a-z][a-z0-9_]{1,63}$/D', $value) !== 1) {
+                        $errors[] = "Ratio {$index} {$field} must be a lowercase machine key.";
+                    }
+                    if ($this->containsPlaceholder($value)) {
                         $errors[] = "Ratio {$index} {$field} still contains a placeholder.";
                     }
+                }
+                if ($numerator !== '' && $numerator === $denominator) {
+                    $errors[] = "Ratio {$index} must use different numerator and denominator inputs.";
                 }
 
                 $maximum = $ratio['max_percent'] ?? null;
@@ -122,9 +152,16 @@ final class ShariaPolicyReadinessInspector
                     $errors[] = "Ratio {$index} max_percent must be greater than 0 and no more than 100.";
                 }
 
-                if (!is_bool($ratio['required'] ?? null)) {
+                $required = $ratio['required'] ?? null;
+                if (!is_bool($required)) {
                     $errors[] = "Ratio {$index} required must be true or false.";
+                } elseif ($required) {
+                    $requiredCount++;
                 }
+            }
+
+            if ($requiredCount === 0) {
+                $errors[] = 'At least one ratio must be required.';
             }
         }
 
