@@ -46,6 +46,12 @@ $backupConfigurationReady = !$backupEnabled || (
 $loginWindowSeconds = max(1, (int) $config->get('security.login_window_seconds', 900));
 $loginRetentionSeconds = (int) $config->get('security.login_attempt_retention_seconds', 604800);
 $loginPruneMaximumRows = (int) $config->get('security.login_attempt_prune_max_rows', 5000);
+$exchangeTimeout = (int) $config->get('polling.request_timeout_seconds', 20);
+$exchangeResponseBytes = (int) $config->get('polling.max_response_bytes', 8_388_608);
+$exchangeHeaderBytes = (int) $config->get('polling.max_header_bytes', 65_536);
+$governmentTimeout = (int) $config->get('government_polling.request_timeout_seconds', 20);
+$governmentResponseBytes = (int) $config->get('government_polling.max_response_bytes', 8_388_608);
+$governmentHeaderBytes = (int) $config->get('government_polling.max_header_bytes', 65_536);
 
 $checks = [
     'php_version' => version_compare(PHP_VERSION, '8.3.0', '>='),
@@ -63,6 +69,12 @@ $checks = [
     'login_attempt_retention' => $loginRetentionSeconds >= max(3600, $loginWindowSeconds * 2)
         && $loginRetentionSeconds <= 31536000,
     'login_attempt_prune_limit' => $loginPruneMaximumRows >= 1 && $loginPruneMaximumRows <= 10000,
+    'exchange_http_limits' => $exchangeTimeout >= 1 && $exchangeTimeout <= 120
+        && $exchangeResponseBytes >= 1 && $exchangeResponseBytes <= 67_108_864
+        && $exchangeHeaderBytes >= 1 && $exchangeHeaderBytes <= 131_072,
+    'government_http_limits' => $governmentTimeout >= 1 && $governmentTimeout <= 120
+        && $governmentResponseBytes >= 1 && $governmentResponseBytes <= 67_108_864
+        && $governmentHeaderBytes >= 1 && $governmentHeaderBytes <= 131_072,
     'private_document_storage' => is_string($documentRealPath)
         && is_writable($documentRealPath)
         && is_string($webRealPath)

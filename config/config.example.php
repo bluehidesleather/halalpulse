@@ -37,6 +37,7 @@ return [
         'bse_interval_seconds' => 3600,
         'request_timeout_seconds' => 20,
         'max_response_bytes' => 8388608,
+        'max_header_bytes' => 65536,
         'user_agent' => 'HalalPulse/0.9 (personal research; contact configured privately)',
         'allowed_hosts' => [
             'www.nseindia.com',
@@ -48,6 +49,7 @@ return [
         'interval_seconds' => 3600,
         'request_timeout_seconds' => 20,
         'max_response_bytes' => 8388608,
+        'max_header_bytes' => 65536,
         'user_agent' => 'HalalPulse/0.9 (personal research; contact configured privately)',
         'allowed_hosts' => [
             'pib.gov.in',

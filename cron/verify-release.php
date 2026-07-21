@@ -16,6 +16,7 @@ $commands = [
     'operations readiness tests' => [$php, $root . '/tests/operations-readiness.php'],
     'repository safety tests' => [$php, $root . '/tests/repository-safety.php'],
     'session security tests' => [$php, $root . '/tests/session-security.php'],
+    'HTTP request security tests' => [$php, $root . '/tests/http-request-security.php'],
     'account session revocation integration' => [$php, $root . '/tests/account-session-revocation-db.php'],
     'public repository safety audit' => [$php, $root . '/cron/audit-repository.php'],
     'deployment health check' => [$php, $root . '/cron/healthcheck.php'],

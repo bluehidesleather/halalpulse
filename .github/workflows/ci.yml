@@ -77,6 +77,7 @@ jobs:
           php tests/operations-readiness.php
           php tests/repository-safety.php
           php tests/session-security.php
+          php tests/http-request-security.php
 
       - name: Verify NSE prohibited-activity exclusion rule
         run: |
