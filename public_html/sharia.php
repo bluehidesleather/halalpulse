@@ -18,6 +18,29 @@ $policy = $app->sharia->activePolicy();
 $summary = $app->sharia->summary();
 $companies = $app->sharia->companies();
 
+usort($companies, static function (array $left, array $right): int {
+    $priority = static function (array $company): array {
+        $status = (string) ($company['screening_status'] ?? 'not_screened');
+        $rank = isset($company['compliance_rank']) ? (int) $company['compliance_rank'] : 99;
+        $statusOrder = match ($status) {
+            'passed' => 0,
+            'insufficient' => 1,
+            'failed' => 2,
+            default => 3,
+        };
+
+        return [
+            $statusOrder,
+            $status === 'passed' ? $rank : 99,
+            mb_strtolower((string) ($company['company_name'] ?? '')),
+            (string) ($company['exchange'] ?? ''),
+            (string) ($company['symbol'] ?? ''),
+        ];
+    };
+
+    return $priority($left) <=> $priority($right);
+});
+
 Page::begin(
     'Sharia screening',
     (string) $config->get('app.name', 'HalalPulse'),
@@ -51,6 +74,11 @@ Page::begin(
     <article class="metric-card"><span>Needs attention</span><strong><?= Page::escape($summary['failed'] + $summary['insufficient']) ?></strong><small><?= Page::escape($summary['failed']) ?> failed · <?= Page::escape($summary['insufficient']) ?> insufficient</small></article>
 </section>
 
+<section class="notice-card">
+    <strong>Rank direction</strong>
+    <p>Rank 1 is the cleanest passing result. Rank 5 is still a pass, but it is closest to one or more active-policy maximums.</p>
+</section>
+
 <section class="panel panel-results">
     <div class="panel-heading"><div><p class="eyebrow">Company workbench</p><h2>Review queue</h2></div><span class="status"><?= Page::escape(count($companies)) ?> shown</span></div>
     <?php if ($companies === []): ?>
@@ -63,7 +91,7 @@ Page::begin(
                 <?php foreach ($companies as $company): ?>
                     <?php $status = (string) ($company['screening_status'] ?? 'not_screened'); ?>
                     <tr>
-                        <td><span class="exchange-badge"><?= Page::escape($company['exchange']) ?></span><a class="table-title" href="/sharia-company.php?id=<?= Page::escape($company['id']) ?>"><strong><?= Page::escape($company['symbol']) ?></strong></a><small><?= Page::escape($company['company_name']) ?></small></td>
+                        <td><span class="exchange-badge"><?= Page::escape($company['exchange']) ?></span><a class="table-title" href="/sharia-company.php?id=<?= Page::escape($company['id']) ?>"><strong><?= Page::escape($company['symbol']) ?></strong></a><small><?= Page::escape($company['company_name']) ?></small><small><a href="/sharia-candidates.php?id=<?= Page::escape($company['id']) ?>">Review structured XBRL evidence</a></small></td>
                         <td><span class="status status-<?= Page::escape($company['activity_status'] ?? 'pending') ?>"><?= Page::escape(ucfirst((string) ($company['activity_status'] ?? 'pending'))) ?></span></td>
                         <td><span class="status status-<?= Page::escape($status) ?>"><?= Page::escape(ucfirst(str_replace('_', ' ', $status))) ?></span></td>
                         <td><?= $company['compliance_rank'] === null ? '—' : Page::escape($company['compliance_rank']) . ' / 5' ?></td>

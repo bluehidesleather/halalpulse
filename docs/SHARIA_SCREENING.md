@@ -39,23 +39,50 @@ The local policy file is ignored by Git. Activation stores a canonical policy ha
 The private `Sharia` page lists companies already observed in official exchange filings. For each company, the administrator:
 
 1. records a business-activity classification, description, source URL, and rationale;
-2. selects a reporting period and enters each input required by the active policy;
-3. records currency, unit scale, evidence note, and an optional stored filing PDF;
+2. selects a reporting period and reviews each input required by the active policy;
+3. records currency, unit scale, evidence note, and an official source reference;
 4. runs the screening only after reviewing the current evidence set.
 
 Activity reviews are append-only. Replacing a financial input marks the previous record `superseded` rather than deleting it. Every screening stores the policy ID, activity snapshot, ratios, reasons, normalized input snapshot, user, and timestamp.
 
+## Structured NSE XBRL candidates
+
+Migration `011_sharia_xbrl_candidates.sql` adds a review queue between official NSE XBRL evidence and accepted Sharia inputs. The five-minute NSE worker may create a `pending` candidate only when all of the following are true:
+
+- the filing was processed successfully and retained in the private archive;
+- the reporting period and ISO currency are present;
+- the source fact uses the matching monetary unit;
+- the value fits exactly inside the configured decimal precision without rounding;
+- the fact mapping is explicitly supported.
+
+The first supported mapping is deliberately narrow:
+
+- `Income` or `TotalIncome` → `total_revenue`, confidence 90%;
+- `RevenueFromOperations` → `total_revenue` fallback, confidence 75%, with mandatory other-income review.
+
+The mapper does **not** reinterpret `OtherIncome` as impermissible income, `DebtEquityRatio` as interest-bearing debt, or any unrelated balance-sheet fact as an AAOIFI input. Missing evidence remains missing.
+
+An administrator may accept a pending candidate only when its metric key is required by the active policy. Acceptance supersedes the previous current input for the same company, period and metric, stores the XBRL item and fact provenance, and records the reviewer and time. Rejection also remains in the audit trail.
+
+For an existing installation, apply migration 011 before deploying the worker code. Then create candidates for already processed filings with:
+
+```sh
+php cron/backfill-sharia-candidates.php --limit=500
+```
+
+The backfill is idempotent. Running it again does not duplicate the same item, metric, fact and context. A partial result exits non-zero and must be reviewed before treating the queue as complete.
+
 ## Compliance rank
 
-Rank 1–5 is a HalalPulse product indicator, not an AAOIFI rating. It is assigned only to a passing result and reflects the worst utilization of any active-policy maximum:
+Rank 1–5 is a HalalPulse product indicator, not an AAOIFI rating. It is assigned only to a passing result. **Rank 1 is the cleanest passing result** and rank 5 is a passing result closest to one or more active-policy maxima. The rank reflects the worst utilization of any active-policy maximum:
 
 | Worst maximum utilization | HalalPulse rank |
 |---:|---:|
-| up to 50% | 5 |
-| over 50%, up to 70% | 4 |
+| up to 50% | 1 |
+| over 50%, up to 70% | 2 |
 | over 70%, up to 85% | 3 |
-| over 85%, up to 95% | 2 |
-| over 95%, up to 100% | 1 |
+| over 85%, up to 95% | 4 |
+| over 95%, up to 100% | 5 |
 
 Failed and insufficient results have no rank. Investment/multibagger scoring remains a separate downstream layer and must not reinterpret a failed or insufficient Sharia result as eligible.
 

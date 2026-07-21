@@ -78,6 +78,10 @@ try {
     $checks['sharia_activity_reviews_table'] = true;
     $pdo->query('SELECT COUNT(*) FROM sharia_financial_inputs')->fetchColumn();
     $checks['sharia_financial_inputs_table'] = true;
+    $pdo->query('SELECT source_integrated_item_id, source_fact_name FROM sharia_financial_inputs LIMIT 1')->fetch();
+    $checks['sharia_xbrl_input_columns'] = true;
+    $pdo->query('SELECT COUNT(*) FROM sharia_input_candidates')->fetchColumn();
+    $checks['sharia_input_candidates_table'] = true;
     $pdo->query('SELECT COUNT(*) FROM sharia_screenings')->fetchColumn();
     $checks['sharia_screenings_table'] = true;
     $pdo->query('SELECT COUNT(*) FROM multibagger_methodologies')->fetchColumn();
@@ -124,6 +128,8 @@ try {
     $checks['sharia_policies_table'] ??= false;
     $checks['sharia_activity_reviews_table'] ??= false;
     $checks['sharia_financial_inputs_table'] ??= false;
+    $checks['sharia_xbrl_input_columns'] ??= false;
+    $checks['sharia_input_candidates_table'] ??= false;
     $checks['sharia_screenings_table'] ??= false;
     $checks['multibagger_methodologies_table'] ??= false;
     $checks['multibagger_factor_reviews_table'] ??= false;

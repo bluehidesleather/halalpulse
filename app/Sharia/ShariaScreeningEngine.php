@@ -138,18 +138,18 @@ final readonly class ShariaScreeningEngine
     private function rank(string $worstUtilization): int
     {
         if ($this->math->compare($worstUtilization, '50') <= 0) {
-            return 5;
+            return 1;
         }
         if ($this->math->compare($worstUtilization, '70') <= 0) {
-            return 4;
+            return 2;
         }
         if ($this->math->compare($worstUtilization, '85') <= 0) {
             return 3;
         }
         if ($this->math->compare($worstUtilization, '95') <= 0) {
-            return 2;
+            return 4;
         }
 
-        return 1;
+        return 5;
     }
 }

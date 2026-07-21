@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace HalalPulse\Nse;
 
 use HalalPulse\Http\HttpClient;
+use HalalPulse\Sharia\NseShariaEvidenceMapper;
+use HalalPulse\Sharia\ShariaInputCandidateStore;
 use HalalPulse\Support\JsonLogger;
 use RuntimeException;
 use Throwable;
@@ -18,6 +20,8 @@ final class NseIntegratedSyncService
         private readonly XmlArchive $archive,
         private readonly NseIntegratedStore $store,
         private readonly NseActivityExclusionService $activityExclusions,
+        private readonly NseShariaEvidenceMapper $shariaEvidenceMapper,
+        private readonly ShariaInputCandidateStore $shariaCandidateStore,
         private readonly JsonLogger $logger,
         private readonly string $feedUrl,
         private readonly int $batchSize = 20,
@@ -27,7 +31,8 @@ final class NseIntegratedSyncService
     /**
      * @return array{
      *   source: string, status: string, trigger: string, feed_items: int,
-     *   discovered: int, excluded: int, queued: int, processed: int, failed: int
+     *   discovered: int, excluded: int, queued: int, processed: int, failed: int,
+     *   sharia_candidates: int
      * }
      */
     public function sync(string $trigger = 'scheduled', ?int $syncRequestId = null): array
@@ -47,6 +52,7 @@ final class NseIntegratedSyncService
                 'queued' => 0,
                 'processed' => 0,
                 'failed' => 0,
+                'sharia_candidates' => 0,
             ];
         }
 
@@ -79,7 +85,12 @@ final class NseIntegratedSyncService
             }
 
             $queue = $this->store->queuedItems($this->batchSize);
-            $counts = ['queued' => count($queue), 'processed' => 0, 'failed' => 0];
+            $counts = [
+                'queued' => count($queue),
+                'processed' => 0,
+                'failed' => 0,
+                'sharia_candidates' => 0,
+            ];
 
             foreach ($queue as $queued) {
                 $this->store->markProcessing($queued->id);
@@ -91,12 +102,20 @@ final class NseIntegratedSyncService
                     $result = $this->xbrlParser->parse($xbrlResponse->body);
                     $xbrlArchive = $this->archive->storeXbrl($xbrlResponse->body, $queued->item);
                     $filingId = $this->store->completeItem($queued, $result, $xbrlArchive);
+                    $mappedCandidates = $this->shariaEvidenceMapper->map($result);
+                    $storedCandidates = $this->shariaCandidateStore->store(
+                        $queued->id,
+                        $result,
+                        $mappedCandidates,
+                    );
                     $counts['processed']++;
+                    $counts['sharia_candidates'] += $storedCandidates;
                     $this->logger->info('NSE Integrated Filing XBRL processed.', [
                         'filing_id' => $filingId,
                         'symbol' => $result->metadata['symbol'],
                         'period_end' => $result->metadata['period_end'],
                         'filing_type' => $queued->item->filingType,
+                        'sharia_candidates_stored' => $storedCandidates,
                     ]);
                 } catch (Throwable $exception) {
                     $counts['failed']++;
@@ -122,6 +141,7 @@ final class NseIntegratedSyncService
                 'queued' => $counts['queued'],
                 'processed' => $counts['processed'],
                 'failed' => $counts['failed'],
+                'sharia_candidates' => $counts['sharia_candidates'],
             ];
             $this->logger->info('NSE Integrated Filing RSS synchronization completed.', $result);
 

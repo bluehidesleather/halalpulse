@@ -18,6 +18,7 @@ use HalalPulse\Alerts\AlertRepository;
 use HalalPulse\Alerts\AlertRecipientCrypto;
 use HalalPulse\Alerts\AlertRecipientRepository;
 use HalalPulse\Support\JsonLogger;
+use HalalPulse\Sharia\ShariaInputCandidateRepository;
 use HalalPulse\Sharia\ShariaRepository;
 use HalalPulse\Multibagger\MultibaggerRepository;
 use PDO;
@@ -35,6 +36,7 @@ final readonly class WebApplication
         public DashboardRepository $dashboard,
         public DocumentReadRepository $documents,
         public ShariaRepository $sharia,
+        public ShariaInputCandidateRepository $shariaCandidates,
         public MultibaggerRepository $multibagger,
         public GovernmentRepository $government,
         public AlertRepository $alerts,
@@ -79,6 +81,7 @@ final readonly class WebApplication
             dashboard: new DashboardRepository($pdo),
             documents: new DocumentReadRepository($pdo),
             sharia: new ShariaRepository($pdo),
+            shariaCandidates: new ShariaInputCandidateRepository($pdo),
             multibagger: new MultibaggerRepository($pdo),
             government: new GovernmentRepository($pdo),
             alerts: new AlertRepository($pdo),
