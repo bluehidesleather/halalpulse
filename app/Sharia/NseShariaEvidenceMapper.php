@@ -79,6 +79,11 @@ final class NseShariaEvidenceMapper
             return null;
         }
 
+        $unitRef = strtoupper(trim((string) ($fact['unit_ref'] ?? '')));
+        if ($unitRef !== $currency) {
+            return null;
+        }
+
         $value = $this->positiveDecimal((string) $fact['value']);
         if ($value === null) {
             return null;
