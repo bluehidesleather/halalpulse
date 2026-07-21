@@ -73,7 +73,7 @@ final readonly class HttpRequestPolicy
             if ($name === '' || strlen($name) > 128 || preg_match("/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/D", $name) !== 1) {
                 throw new HttpRequestException('HTTP request header name is invalid.');
             }
-            if (strlen($value) > 8192 || preg_match('/[\x00\r\n]/', $value) === 1) {
+            if (strlen($value) > 8192 || preg_match('/[\x00-\x08\x0a-\x1f\x7f]/', $value) === 1) {
                 throw new HttpRequestException('HTTP request header value is invalid.');
             }
             $lines[] = $name . ': ' . trim($value);
