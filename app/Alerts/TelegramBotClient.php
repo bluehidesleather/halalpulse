@@ -163,7 +163,14 @@ final readonly class TelegramBotClient
                 throw new TelegramApiException('Telegram request did not return a complete response.', $status ?: null, outcomeKnown: !$sendOutcomeMayBeUnknown);
             }
             $contentTypes = $responseHeaders['content-type'] ?? [];
-            if ($contentTypes !== [] && !array_any($contentTypes, static fn (string $value): bool => str_contains(strtolower($value), 'application/json'))) {
+            $jsonContentType = $contentTypes === [];
+            foreach ($contentTypes as $contentType) {
+                if (str_contains(strtolower($contentType), 'application/json')) {
+                    $jsonContentType = true;
+                    break;
+                }
+            }
+            if (!$jsonContentType) {
                 throw new TelegramApiException('Telegram returned an unexpected content type.', $status ?: null, outcomeKnown: $status >= 400 || !$sendOutcomeMayBeUnknown);
             }
             try {
