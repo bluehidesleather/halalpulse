@@ -56,6 +56,7 @@ $checks = [
     'local_config' => is_file(HALALPULSE_ROOT . '/config/config.local.php'),
     'security_app_key' => strlen((string) $config->get('security.app_key', '')) >= 32,
     'secure_session_cookie' => $config->get('app.force_https', true) === true,
+    'session_rotation_interval' => (int) $config->get('security.session_rotation_seconds', 900) >= 300,
     'private_document_storage' => is_string($documentRealPath)
         && is_writable($documentRealPath)
         && is_string($webRealPath)
@@ -88,6 +89,8 @@ try {
         === (string) $config->get('database.session_timezone', '+05:30');
     $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
     $checks['users_table'] = true;
+    $pdo->query('SELECT auth_version FROM users LIMIT 1')->fetch();
+    $checks['users_auth_version_column'] = true;
     $pdo->query('SELECT COUNT(*) FROM login_attempts')->fetchColumn();
     $checks['login_attempts_table'] = true;
     $pdo->query('SELECT COUNT(*) FROM filing_documents')->fetchColumn();
@@ -144,6 +147,7 @@ try {
     $checks['database'] = false;
     $checks['database_timezone'] ??= false;
     $checks['users_table'] ??= false;
+    $checks['users_auth_version_column'] ??= false;
     $checks['login_attempts_table'] ??= false;
     $checks['filing_documents_table'] ??= false;
     $checks['metric_candidates_table'] ??= false;
