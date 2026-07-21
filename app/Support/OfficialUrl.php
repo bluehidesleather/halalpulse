@@ -9,7 +9,11 @@ final class OfficialUrl
     /** @param list<string> $allowedHosts */
     public static function attachment(?string $value, string $baseUrl, array $allowedHosts): ?string
     {
-        $value = trim((string) $value);
+        $value = (string) $value;
+        if ($value === '' || strlen($value) > 4096 || preg_match('/[\x00-\x1f\x7f]/', $value) === 1) {
+            return null;
+        }
+        $value = trim($value);
         if ($value === '') {
             return null;
         }
@@ -21,22 +25,7 @@ final class OfficialUrl
         }
 
         $value = str_replace(' ', '%20', $value);
-        $parts = parse_url($value);
-        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
-        $host = strtolower((string) ($parts['host'] ?? ''));
-        $path = (string) ($parts['path'] ?? '');
-        $allowed = array_map(static fn (string $item): string => strtolower($item), $allowedHosts);
 
-        if (
-            $scheme !== 'https'
-            || $host === ''
-            || !in_array($host, $allowed, true)
-            || str_contains($path, '..')
-            || filter_var($value, FILTER_VALIDATE_URL) === false
-        ) {
-            return null;
-        }
-
-        return $value;
+        return OfficialHttpsUrl::isAllowed($value, $allowedHosts) ? $value : null;
     }
 }

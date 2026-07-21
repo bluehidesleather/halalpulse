@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace HalalPulse\Multibagger;
 
+use HalalPulse\Support\OfficialHttpsUrl;
+
 final class ResearchEvidenceUrl
 {
     private const FINANCIAL_HOSTS = [
@@ -38,19 +40,8 @@ final class ResearchEvidenceUrl
 
     public static function isAllowed(string $url, bool $governmentOnly = false): bool
     {
-        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
-            return false;
-        }
-        $parts = parse_url($url);
-        if (!is_array($parts) || strtolower((string) ($parts['scheme'] ?? '')) !== 'https') {
-            return false;
-        }
-        if (isset($parts['user']) || isset($parts['pass']) || isset($parts['port'])) {
-            return false;
-        }
-        $host = strtolower((string) ($parts['host'] ?? ''));
         $allowed = $governmentOnly ? self::GOVERNMENT_HOSTS : array_merge(self::FINANCIAL_HOSTS, self::GOVERNMENT_HOSTS);
 
-        return in_array($host, $allowed, true);
+        return OfficialHttpsUrl::isAllowed($url, $allowed);
     }
 }
