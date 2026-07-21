@@ -79,6 +79,7 @@ jobs:
           php tests/session-security.php
           php tests/http-request-security.php
           php tests/official-url-security.php
+          php tests/telegram-security.php
 
       - name: Verify NSE prohibited-activity exclusion rule
         run: |
