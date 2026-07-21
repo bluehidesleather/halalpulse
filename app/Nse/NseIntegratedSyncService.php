@@ -17,6 +17,7 @@ final class NseIntegratedSyncService
         private readonly IntegratedXbrlParser $xbrlParser,
         private readonly XmlArchive $archive,
         private readonly NseIntegratedStore $store,
+        private readonly NseActivityExclusionService $activityExclusions,
         private readonly JsonLogger $logger,
         private readonly string $feedUrl,
         private readonly int $batchSize = 20,
@@ -26,7 +27,7 @@ final class NseIntegratedSyncService
     /**
      * @return array{
      *   source: string, status: string, trigger: string, feed_items: int,
-     *   discovered: int, queued: int, processed: int, failed: int
+     *   discovered: int, excluded: int, queued: int, processed: int, failed: int
      * }
      */
     public function sync(string $trigger = 'scheduled', ?int $syncRequestId = null): array
@@ -42,6 +43,7 @@ final class NseIntegratedSyncService
                 'trigger' => $trigger,
                 'feed_items' => 0,
                 'discovered' => 0,
+                'excluded' => 0,
                 'queued' => 0,
                 'processed' => 0,
                 'failed' => 0,
@@ -59,7 +61,15 @@ final class NseIntegratedSyncService
             $feed = $this->rssParser->parse($response->body);
             $feedArchive = $this->archive->storeFeed($response->body, $feed->lastBuildAt);
             $discovered = $this->store->discover($feed);
+            $excluded = $this->activityExclusions->apply();
             $this->store->recordFeed($runId, $feed, $feedArchive, $discovered);
+
+            if ($excluded > 0) {
+                $this->logger->info('NSE Integrated Filing items excluded before financial processing.', [
+                    'excluded' => $excluded,
+                    'reason' => NseActivityExclusionService::BANKING_REASON,
+                ]);
+            }
 
             if ($feed->warnings !== []) {
                 $this->logger->info('NSE Integrated Filing RSS included skipped items.', [
@@ -108,6 +118,7 @@ final class NseIntegratedSyncService
                 'trigger' => $trigger,
                 'feed_items' => $feed->sourceRows,
                 'discovered' => $discovered,
+                'excluded' => $excluded,
                 'queued' => $counts['queued'],
                 'processed' => $counts['processed'],
                 'failed' => $counts['failed'],
