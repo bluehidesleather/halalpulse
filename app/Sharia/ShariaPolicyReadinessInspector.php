@@ -12,7 +12,7 @@ final class ShariaPolicyReadinessInspector
      * @param array<string, mixed> $input
      * @return array{ready: bool, errors: list<string>, warnings: list<string>}
      */
-    public function inspect(array $input): array
+    public function inspect(array $input, bool $requireApproval = true): array
     {
         $errors = [];
         $warnings = [];
@@ -82,7 +82,7 @@ final class ShariaPolicyReadinessInspector
             $errors[] = 'verification_note must document the edition, language, clauses, and review basis.';
         }
 
-        if (($input['approved_for_use'] ?? null) !== true) {
+        if ($requireApproval && ($input['approved_for_use'] ?? null) !== true) {
             $errors[] = 'approved_for_use must be true only after independent review is complete.';
         }
 
