@@ -4,7 +4,6 @@
 declare(strict_types=1);
 
 use HalalPulse\Http\CurlHttpClient;
-use HalalPulse\Http\HttpRequestException;
 use HalalPulse\Http\HttpRequestPolicy;
 
 require dirname(__DIR__) . '/app/bootstrap.php';
@@ -24,7 +23,7 @@ $rejects = static function (callable $operation): bool {
     try {
         $operation();
         return false;
-    } catch (HttpRequestException|RuntimeException) {
+    } catch (RuntimeException) {
         return true;
     }
 };
