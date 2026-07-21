@@ -1,29 +1,140 @@
 {
   "version": "REPLACE-WITH-REVIEWED-VERSION",
   "name": "HalalPulse personal multibagger research methodology",
-  "effective_date": "2026-07-19",
+  "effective_date": "2026-07-21",
   "verified_by": "REPLACE-WITH-REVIEWER",
-  "verification_note": "Replace this note after reviewing factor definitions, weights, market-cap bands, valuation assumptions, and evidence requirements.",
+  "verification_note": "REPLACE with a review record covering every factor definition, grade anchor, weight, valuation assumption, market-cap band, evidence rule, and microcap adjustment.",
   "approved_for_use": false,
   "grade_direction": "1_best_10_weakest",
   "alert_max_score": 4,
   "graham_coefficient": "22.5",
   "valuation_required": true,
+  "review_scope": {
+    "minimum_history_years": 3,
+    "factor_evidence_note_min_chars": 40,
+    "valuation_assumptions_note_min_chars": 80,
+    "official_sources_only": true,
+    "same_period_sharia_pass_required": true,
+    "media_sources_allowed": false
+  },
   "factors": [
-    {"key": "piotroski_f_score", "label": "Piotroski F-Score", "description": "Nine-signal historical financial-strength review with the underlying statements retained as evidence.", "weight_percent": 12, "required": true},
-    {"key": "intrinsic_value", "label": "Graham and DCF valuation", "description": "Review both methods; label undervalued only when current price is no higher than both values.", "weight_percent": 12, "required": true},
-    {"key": "returns_quality", "label": "ROE and ROCE", "description": "Review return on equity, return on capital employed, persistence, and capital intensity.", "weight_percent": 10, "required": true},
-    {"key": "growth_consistency", "label": "Revenue and profit growth", "description": "Review at least three years when available, including CAGR, yearly consistency, and margin compression.", "weight_percent": 10, "required": true},
-    {"key": "margin_trend", "label": "Operating margin trend", "description": "Review EBITDA margin level, direction, and negative-operating-profit risk.", "weight_percent": 8, "required": true},
-    {"key": "debt_quality", "label": "Debt quality", "description": "Review debt-to-equity, interest coverage, debt direction, and available secured/unsecured composition.", "weight_percent": 8, "required": true},
-    {"key": "cash_flow_quality", "label": "Cash-flow quality", "description": "Review operating cash flow versus profit, free cash flow, capital expenditure, and cash conversion.", "weight_percent": 8, "required": true},
-    {"key": "working_capital", "label": "Working-capital efficiency", "description": "Review current and quick ratios, debtor days, inventory days, and their trends.", "weight_percent": 6, "required": true},
-    {"key": "promoter_quality", "label": "Promoter quality", "description": "Review promoter holding and direction, pledge, dilution, and disclosed governance evidence.", "weight_percent": 8, "required": true},
-    {"key": "institutional_trend", "label": "Institutional ownership trend", "description": "Review FII and DII direction without penalizing an otherwise strong microcap solely for zero institutional ownership.", "weight_percent": 6, "required": true},
-    {"key": "macro_tailwind", "label": "Official macro tailwind", "description": "Use PIB, SEBI, RBI, MCA, or Union Budget evidence only; do not use media or social posts.", "weight_percent": 6, "required": true},
-    {"key": "valuation_ratios", "label": "Relative valuation ratios", "description": "Review PE versus sector, price-to-book, EV/EBITDA, PEG, and data comparability.", "weight_percent": 6, "required": true}
+    {
+      "key": "piotroski_f_score",
+      "label": "Piotroski F-Score",
+      "description": "Nine-signal historical financial-strength review with the underlying statements retained as evidence.",
+      "weight_percent": 12,
+      "required": true,
+      "evidence_requirements": ["Retain the financial statements used for every one of the nine signals.", "Document each binary signal and reconcile the final F-Score to the retained statements."],
+      "grade_anchors": {"1": "REPLACE with the strongest-evidence grade anchor.", "4": "REPLACE with the above-average grade anchor.", "7": "REPLACE with the weak-evidence grade anchor.", "10": "REPLACE with the weakest or materially adverse grade anchor."}
+    },
+    {
+      "key": "intrinsic_value",
+      "label": "Graham and DCF valuation",
+      "description": "Review both methods; label undervalued only when current price is no higher than both values.",
+      "weight_percent": 12,
+      "required": true,
+      "evidence_requirements": ["Retain EPS, book value per share, current price, and their reporting dates.", "Retain the complete DCF assumptions and reconcile the resulting per-share value."],
+      "grade_anchors": {"1": "REPLACE with the strongest dual-valuation anchor.", "4": "REPLACE with the moderate-margin-of-safety anchor.", "7": "REPLACE with the expensive or assumption-sensitive anchor.", "10": "REPLACE with the materially overvalued or unusable anchor."}
+    },
+    {
+      "key": "returns_quality",
+      "label": "ROE and ROCE",
+      "description": "Review return on equity, return on capital employed, persistence, and capital intensity.",
+      "weight_percent": 10,
+      "required": true,
+      "evidence_requirements": ["Retain at least the configured history of ROE and ROCE calculations.", "Explain material differences between ROE and ROCE and any leverage or capital-intensity effect."],
+      "grade_anchors": {"1": "REPLACE with the durable high-return anchor.", "4": "REPLACE with the adequate and improving return anchor.", "7": "REPLACE with the weak or volatile return anchor.", "10": "REPLACE with the persistently poor return anchor."}
+    },
+    {
+      "key": "growth_consistency",
+      "label": "Revenue and profit growth",
+      "description": "Review at least three years when available, including CAGR, yearly consistency, and margin compression.",
+      "weight_percent": 10,
+      "required": true,
+      "evidence_requirements": ["Retain yearly revenue and profit figures for the configured history period.", "Document CAGR, negative years, base effects, acquisitions, and margin changes."],
+      "grade_anchors": {"1": "REPLACE with the strong and consistent growth anchor.", "4": "REPLACE with the positive but uneven growth anchor.", "7": "REPLACE with the weak or low-quality growth anchor.", "10": "REPLACE with the shrinking or unreliable growth anchor."}
+    },
+    {
+      "key": "margin_trend",
+      "label": "Operating margin trend",
+      "description": "Review EBITDA margin level, direction, and negative-operating-profit risk.",
+      "weight_percent": 8,
+      "required": true,
+      "evidence_requirements": ["Retain operating-profit and revenue evidence for each reviewed period.", "Explain margin direction, cyclicality, exceptional items, and negative operating-profit periods."],
+      "grade_anchors": {"1": "REPLACE with the high and improving margin anchor.", "4": "REPLACE with the stable or moderately improving margin anchor.", "7": "REPLACE with the compressed or volatile margin anchor.", "10": "REPLACE with the structurally negative margin anchor."}
+    },
+    {
+      "key": "debt_quality",
+      "label": "Debt quality",
+      "description": "Review debt-to-equity, interest coverage, debt direction, and available secured/unsecured composition.",
+      "weight_percent": 8,
+      "required": true,
+      "evidence_requirements": ["Retain borrowings, finance cost, equity, and operating-profit evidence.", "Document debt trend, interest coverage, repayment concentration, and disclosed security or covenant risk."],
+      "grade_anchors": {"1": "REPLACE with the net-cash or exceptionally strong debt anchor.", "4": "REPLACE with the manageable leverage anchor.", "7": "REPLACE with the elevated leverage or weak coverage anchor.", "10": "REPLACE with the distressed leverage anchor."}
+    },
+    {
+      "key": "cash_flow_quality",
+      "label": "Cash-flow quality",
+      "description": "Review operating cash flow versus profit, free cash flow, capital expenditure, and cash conversion.",
+      "weight_percent": 8,
+      "required": true,
+      "evidence_requirements": ["Retain operating cash flow, profit, capital expenditure, and free-cash-flow evidence.", "Explain recurring profit-to-cash divergence and major working-capital or capital-expenditure effects."],
+      "grade_anchors": {"1": "REPLACE with the consistently strong cash-conversion anchor.", "4": "REPLACE with the acceptable cash-conversion anchor.", "7": "REPLACE with the weak or volatile cash-conversion anchor.", "10": "REPLACE with the persistent negative cash-quality anchor."}
+    },
+    {
+      "key": "working_capital",
+      "label": "Working-capital efficiency",
+      "description": "Review current and quick ratios, debtor days, inventory days, and their trends.",
+      "weight_percent": 6,
+      "required": true,
+      "evidence_requirements": ["Retain receivables, inventory, payables, current assets, and current liabilities for each reviewed period.", "Document debtor, inventory, and payable-day trends and any material concentration or ageing concern."],
+      "grade_anchors": {"1": "REPLACE with the efficient and improving working-capital anchor.", "4": "REPLACE with the adequate working-capital anchor.", "7": "REPLACE with the stretched or deteriorating anchor.", "10": "REPLACE with the severe liquidity or collection-risk anchor."}
+    },
+    {
+      "key": "promoter_quality",
+      "label": "Promoter quality",
+      "description": "Review promoter holding and direction, pledge, dilution, and disclosed governance evidence.",
+      "weight_percent": 8,
+      "required": true,
+      "evidence_requirements": ["Retain exchange disclosures for promoter holding, pledge, and dilution over the reviewed periods.", "Document auditor, related-party, regulatory, or governance matters that affect the grade."],
+      "grade_anchors": {"1": "REPLACE with the strong alignment and governance anchor.", "4": "REPLACE with the acceptable governance anchor.", "7": "REPLACE with the material concern anchor.", "10": "REPLACE with the severe pledge, dilution, or governance-risk anchor."}
+    },
+    {
+      "key": "institutional_trend",
+      "label": "Institutional ownership trend",
+      "description": "Review FII and DII direction without penalizing an otherwise strong microcap solely for zero institutional ownership.",
+      "weight_percent": 6,
+      "required": true,
+      "evidence_requirements": ["Retain quarterly shareholding-pattern disclosures for FII and DII ownership.", "Explain changes, base effects, and why zero institutional ownership is or is not material for the company size."],
+      "grade_anchors": {"1": "REPLACE with the strong and corroborated ownership-trend anchor.", "4": "REPLACE with the neutral or moderately improving anchor.", "7": "REPLACE with the declining or uncertain ownership anchor.", "10": "REPLACE with the materially adverse ownership or disclosure anchor."}
+    },
+    {
+      "key": "macro_tailwind",
+      "label": "Official macro tailwind",
+      "description": "Use PIB, SEBI, RBI, MCA, or Union Budget evidence only; do not use media or social posts.",
+      "weight_percent": 6,
+      "required": true,
+      "evidence_requirements": ["Link a current approved government-tailwind review from an allowed official source.", "Explain the transmission mechanism from the policy action to the company's sector and earnings capacity."],
+      "grade_anchors": {"1": "REPLACE with the strong direct official-tailwind anchor.", "4": "REPLACE with the moderate direct or strong indirect anchor.", "7": "REPLACE with the weak, uncertain, or offsetting-policy anchor.", "10": "REPLACE with the material official headwind anchor."}
+    },
+    {
+      "key": "valuation_ratios",
+      "label": "Relative valuation ratios",
+      "description": "Review PE versus sector, price-to-book, EV/EBITDA, PEG, and data comparability.",
+      "weight_percent": 6,
+      "required": true,
+      "evidence_requirements": ["Retain the company's valuation ratios, comparison set, dates, and calculation basis.", "Document loss-making comparables, exceptional earnings, sector differences, and any non-comparable data."],
+      "grade_anchors": {"1": "REPLACE with the compelling comparable-valuation anchor.", "4": "REPLACE with the reasonable valuation anchor.", "7": "REPLACE with the expensive or weakly comparable anchor.", "10": "REPLACE with the extreme or unusable valuation anchor."}
+    }
   ],
+  "valuation_policy": {
+    "graham_basis_note": "REPLACE with the reviewed reason for using the configured Graham coefficient and the limitations of this calculation.",
+    "dcf_review_note": "REPLACE with the required DCF review discipline, scenario checks, and rules for rejecting unsupported assumptions.",
+    "dcf_required_assumptions": ["forecast_period_years", "base_free_cash_flow", "growth_rates", "discount_rate", "terminal_growth_rate", "net_debt", "diluted_shares", "margin_of_safety"]
+  },
   "market_cap_bands_crore": {"large_min": "20000", "mid_min": "5000", "small_min": "500", "micro_min": "50"},
+  "market_cap_band_note": "REPLACE with the reviewed rationale, intended use, and review date for these market-cap categories.",
+  "microcap_adjustment_note": "REPLACE with the reviewed rationale for each red/green adjustment and the safeguards against double-counting factor risks.",
   "microcap_adjustments": {
     "applies_below_crore": "500",
     "red_flag_points": 2,
