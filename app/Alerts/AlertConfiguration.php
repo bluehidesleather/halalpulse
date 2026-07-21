@@ -33,7 +33,7 @@ final readonly class AlertConfiguration
             appBaseUrl: rtrim((string) $config->get('alerts.app_base_url', ''), '/'),
             botToken: trim((string) $config->get('alerts.telegram.bot_token', '')),
             timeoutSeconds: (int) $config->get('alerts.telegram.request_timeout_seconds', 20),
-            maxRequestBytes: (int) $config->get('alerts.telegram.max_request_bytes', 16_384),
+            maxRequestBytes: (int) $config->get('alerts.telegram.max_request_bytes', 32_768),
             maxResponseBytes: (int) $config->get('alerts.telegram.max_response_bytes', 1_048_576),
             maxHeaderBytes: (int) $config->get('alerts.telegram.max_header_bytes', 65_536),
         );
