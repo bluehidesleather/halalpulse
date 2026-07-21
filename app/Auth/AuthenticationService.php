@@ -46,7 +46,7 @@ final class AuthenticationService
         }
 
         if ($this->hasher->needsRehash($user->passwordHash)) {
-            $this->users->updatePasswordHash($user->id, $this->hasher->hash($password));
+            $this->users->rehashPasswordHash($user->id, $this->hasher->hash($password));
         }
 
         $this->rateLimiter->recordSuccess($identityHash, $ipHash, $user->id);
@@ -64,7 +64,7 @@ final class AuthenticationService
         }
 
         $this->users->updatePasswordHash($user->id, $this->hasher->hash($newPassword));
-        $this->logger->info('Password changed.', ['user_id' => $user->id]);
+        $this->logger->info('Password changed and older sessions revoked.', ['user_id' => $user->id]);
 
         return true;
     }
