@@ -11,11 +11,12 @@ Private, personal-use intelligence platform for detecting new NSE/BSE quarterly-
 - Layer 1: AAOIFI Sharia pass/fail plus compliance rank 1–5.
 - Layer 2: separate multibagger score 1–10; scores 1–4 may trigger an alert.
 - Telegram Bot alerts are free under Telegram's standard limits and remain disabled until a consenting recipient is registered.
+- Conventional banking-taxonomy filings are retained as excluded source evidence and never enter financial scoring or alerts.
 - No secret, password, cookie, bot token, or recipient address belongs in Git.
 
 ## Current milestone
 
-Milestone 10 adds a disabled-by-default, integrity-preserving NSE Integrated Filing RSS/XBRL pipeline. It archives source XML privately, stores normalized financial results plus all XBRL facts, retries individual failures, runs automatically every five minutes, and exposes an administrator-only queue button on the dashboard.
+Milestone 10 adds a disabled-by-default, integrity-preserving NSE Integrated Filing RSS/XBRL pipeline. It archives source XML privately, stores normalized financial results plus all XBRL facts, excludes conventional banking-taxonomy filings before financial processing, retries individual technical failures, runs automatically every five minutes, and exposes an administrator-only queue button on the dashboard.
 
 ## Repository layout
 
@@ -41,7 +42,7 @@ tests/               Dependency-free test harness
 7. For the Sharia module, copy `config/sharia-policy.example.json` to the ignored `config/sharia-policy.local.json`. Verify and fill it from the current official or licensed standard text; do not invent missing values.
 8. Activate the reviewed policy with `php cron/install-sharia-policy.php config/sharia-policy.local.json`.
 9. Copy `config/multibagger-methodology.example.json` to the ignored `config/multibagger-methodology.local.json`, review every factor and assumption, approve it, then run `php cron/install-multibagger-methodology.php config/multibagger-methodology.local.json`.
-10. Apply migrations `006_government_tailwinds.sql`, `007_alert_delivery.sql`, `008_telegram_alerts.sql`, and `009_nse_integrated_rss.sql` in order on an existing installation (fresh installs import the full schema).
+10. Apply migrations `006_government_tailwinds.sql`, `007_alert_delivery.sql`, `008_telegram_alerts.sql`, `009_nse_integrated_rss.sql`, and `010_nse_activity_exclusions.sql` in order on an existing installation. Until migration 010 is consolidated into the canonical schema, fresh installations also apply it immediately after importing `database/schema.sql`.
 11. Run `php tests/run.php` and `php cron/healthcheck.php`.
 12. Point the domain document root at this project's `public_html` directory and sign in over HTTPS.
 13. Run `php cron/probe-sources.php NSE BSE` from the hosting account. This makes one request to each exchange and does not write to the database.
