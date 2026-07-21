@@ -47,15 +47,15 @@ Activity reviews are append-only. Replacing a financial input marks the previous
 
 ## Compliance rank
 
-Rank 1–5 is a HalalPulse product indicator, not an AAOIFI rating. It is assigned only to a passing result and reflects the worst utilization of any active-policy maximum:
+Rank 1–5 is a HalalPulse product indicator, not an AAOIFI rating. It is assigned only to a passing result. **Rank 1 is the cleanest passing result** and rank 5 is a passing result closest to one or more active-policy maxima. The rank reflects the worst utilization of any active-policy maximum:
 
 | Worst maximum utilization | HalalPulse rank |
 |---:|---:|
-| up to 50% | 5 |
-| over 50%, up to 70% | 4 |
+| up to 50% | 1 |
+| over 50%, up to 70% | 2 |
 | over 70%, up to 85% | 3 |
-| over 85%, up to 95% | 2 |
-| over 95%, up to 100% | 1 |
+| over 85%, up to 95% | 4 |
+| over 95%, up to 100% | 5 |
 
 Failed and insufficient results have no rank. Investment/multibagger scoring remains a separate downstream layer and must not reinterpret a failed or insufficient Sharia result as eligible.
 
