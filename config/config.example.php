@@ -148,7 +148,8 @@ return [
         'retention_days' => 14,
         'maximum_age_hours' => 30,
         'encryption_passphrase' => '',
-        'mysqldump_binary' => '/usr/bin/mysqldump',
+        // This wrapper adds --no-tablespaces so a least-privilege database account can create a logical backup.
+        'mysqldump_binary' => dirname(__DIR__) . '/bin/mysqldump-no-tablespaces',
         'tar_binary' => '/usr/bin/tar',
         // Paths are relative to the project root and are encrypted before the final backup is published.
         'include_paths' => [
