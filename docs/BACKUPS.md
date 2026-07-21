@@ -34,6 +34,14 @@ The encryption passphrase is never written into the bundle, database, log, statu
 
 ## Private configuration
 
+Make the repository wrapper executable once after deployment:
+
+```sh
+chmod 700 /home/USER/halalpulse/bin/mysqldump-no-tablespaces
+```
+
+The wrapper invokes the system `mysqldump` with `--no-tablespaces`. HalalPulse does not restore server-level tablespaces, and excluding them permits logical backups under a least-privilege database account without granting the global `PROCESS` privilege.
+
 Copy the safe example fields into ignored `config/config.local.php` and set a unique passphrase:
 
 ```php
@@ -43,7 +51,7 @@ Copy the safe example fields into ignored `config/config.local.php` and set a un
     'retention_days' => 14,
     'maximum_age_hours' => 30,
     'encryption_passphrase' => 'A UNIQUE PRIVATE PASSPHRASE STORED OFFLINE TOO',
-    'mysqldump_binary' => '/usr/bin/mysqldump',
+    'mysqldump_binary' => dirname(__DIR__) . '/bin/mysqldump-no-tablespaces',
     'tar_binary' => '/usr/bin/tar',
     'include_paths' => [
         'config/config.local.php',
@@ -69,12 +77,13 @@ The first command:
 1. obtains a non-blocking process lock;
 2. writes into a mode-0700 temporary directory;
 3. streams `mysqldump` into gzip without putting the database password in the process arguments;
-4. archives only configured private paths;
-5. creates a manifest and compressed recovery bundle;
-6. encrypts the bundle with authenticated chunks;
-7. decrypts and verifies it before publishing;
-8. writes mode-0600 `latest.json` metadata; and
-9. removes expired `.hpbak` files according to the retention period.
+4. excludes server-level tablespaces and archives only the application database;
+5. archives only configured private paths;
+6. creates a manifest and compressed recovery bundle;
+7. encrypts the bundle with authenticated chunks;
+8. decrypts and verifies it before publishing;
+9. writes mode-0600 `latest.json` metadata; and
+10. removes expired `.hpbak` files according to the retention period.
 
 The second command verifies file existence, age, encrypted SHA-256, authenticated decryption, and the expected plaintext SHA-256.
 
