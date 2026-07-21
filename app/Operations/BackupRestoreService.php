@@ -141,7 +141,7 @@ final readonly class BackupRestoreService
     {
         $process = proc_open(
             [$this->tarBinary(), '--list', '--gzip', '--file', $path],
-            [0 => ['file', '/dev/null', 'rb'], 1 => ['pipe', 'rb'], 2 => ['pipe', 'rb']],
+            [0 => ['file', '/dev/null', 'rb'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
             $pipes,
             $this->projectRoot,
         );
@@ -177,7 +177,7 @@ final readonly class BackupRestoreService
     {
         $process = proc_open(
             $command,
-            [0 => ['file', '/dev/null', 'rb'], 1 => ['file', '/dev/null', 'wb'], 2 => ['pipe', 'rb']],
+            [0 => ['file', '/dev/null', 'rb'], 1 => ['file', '/dev/null', 'wb'], 2 => ['pipe', 'w']],
             $pipes,
             $this->projectRoot,
         );
