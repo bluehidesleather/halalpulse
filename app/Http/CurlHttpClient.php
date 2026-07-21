@@ -29,7 +29,7 @@ final class CurlHttpClient implements HttpClient
         if ($this->maxHeaderBytes < 1 || $this->maxHeaderBytes > 131_072) {
             throw new RuntimeException('HTTP response-header limit must be between 1 byte and 128 KiB.');
         }
-        if ($this->userAgent === '' || strlen($this->userAgent) > 256 || preg_match('/[\x00\r\n]/', $this->userAgent) === 1) {
+        if ($this->userAgent === '' || strlen($this->userAgent) > 256 || preg_match('/[\x00-\x08\x0a-\x1f\x7f]/', $this->userAgent) === 1) {
             throw new RuntimeException('HTTP user agent is invalid.');
         }
     }
