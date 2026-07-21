@@ -3,6 +3,7 @@
 
 declare(strict_types=1);
 
+use HalalPulse\Auth\LoginAttemptMaintenance;
 use HalalPulse\Auth\PasswordHasher;
 use HalalPulse\Auth\SessionManager;
 use HalalPulse\Auth\UserRepository;
@@ -64,6 +65,62 @@ try {
     }
     $statement = $pdo->prepare('DELETE FROM users WHERE id = :id');
     $statement->execute(['id' => $userId]);
+}
+
+$maintenance = new LoginAttemptMaintenance($pdo);
+$identityHash = hash('sha256', 'halalpulse-login-retention-test');
+$ipHash = hash('sha256', '192.0.2.44');
+$pdo->beginTransaction();
+try {
+    $statement = $pdo->prepare(
+        <<<'SQL'
+        INSERT INTO login_attempts (identity_hash, ip_hash, user_id, was_successful, attempted_at)
+        VALUES (:identity_hash, :ip_hash, NULL, 0, :attempted_at)
+        SQL
+    );
+    foreach ([
+        '2000-01-01 00:00:00',
+        '2000-01-02 00:00:00',
+        '2000-01-03 00:00:00',
+        '2002-01-01 00:00:00',
+        '2002-01-02 00:00:00',
+    ] as $attemptedAt) {
+        $statement->execute([
+            'identity_hash' => $identityHash,
+            'ip_hash' => $ipHash,
+            'attempted_at' => $attemptedAt,
+        ]);
+    }
+
+    $deletedFirst = $maintenance->pruneBefore(new DateTimeImmutable('2001-01-01 00:00:00'), 2);
+    $record($deletedFirst === 2, 'The first login-history maintenance pass respects its strict row limit.');
+
+    $oldCount = $pdo->prepare(
+        'SELECT COUNT(*) FROM login_attempts WHERE identity_hash = :identity_hash AND attempted_at < :cutoff'
+    );
+    $oldCount->execute(['identity_hash' => $identityHash, 'cutoff' => '2001-01-01 00:00:00']);
+    $record((int) $oldCount->fetchColumn() === 1, 'Rows beyond the bounded first pass remain available for the next run.');
+
+    $deletedSecond = $maintenance->pruneBefore(new DateTimeImmutable('2001-01-01 00:00:00'), 100);
+    $record($deletedSecond === 1, 'A later login-history pass removes the remaining expired synthetic row.');
+
+    $recentCount = $pdo->prepare(
+        'SELECT COUNT(*) FROM login_attempts WHERE identity_hash = :identity_hash AND attempted_at >= :cutoff'
+    );
+    $recentCount->execute(['identity_hash' => $identityHash, 'cutoff' => '2001-01-01 00:00:00']);
+    $record((int) $recentCount->fetchColumn() === 2, 'Login attempts at or after the cutoff are preserved.');
+
+    foreach ([0, 10001] as $invalidLimit) {
+        $thrown = false;
+        try {
+            $maintenance->pruneBefore(new DateTimeImmutable('2001-01-01 00:00:00'), $invalidLimit);
+        } catch (RuntimeException) {
+            $thrown = true;
+        }
+        $record($thrown, "An invalid login-history prune limit of {$invalidLimit} fails closed.");
+    }
+} finally {
+    $pdo->rollBack();
 }
 
 $passed = 0;
