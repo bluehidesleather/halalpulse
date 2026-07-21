@@ -1,6 +1,6 @@
 # Shared-hosting cron setup
 
-HalalPulse uses a five-minute command for the official NSE Integrated Filing RSS plus hourly commands for the legacy exchange, government, document, and alert workflows. MySQL advisory locks prevent overlapping runs.
+HalalPulse uses a five-minute command for the official NSE Integrated Filing RSS plus hourly commands for the legacy exchange, government, document, and alert workflows. It also uses daily bounded maintenance for encrypted backups and login-attempt retention. MySQL advisory locks prevent overlapping source and backup runs.
 
 ## Before scheduling
 
@@ -8,7 +8,7 @@ HalalPulse uses a five-minute command for the official NSE Integrated Filing RSS
 2. Keep the project outside `public_html`, except for the supplied `public_html` directory.
 3. Create `config/config.local.php` from the example and add the real database credentials there.
 4. Generate and configure the private application key, then create the administrator as described in `AUTHENTICATION.md`.
-5. Import `database/schema.sql`, or apply all missing numbered migrations including `009_nse_integrated_rss.sql` to an existing database.
+5. Import `database/schema.sql`, then apply every missing numbered migration through `012_user_auth_version.sql` to an existing database.
 6. Verify and activate the ignored local Sharia policy as described in `SHARIA_SCREENING.md`; the example intentionally has no usable thresholds.
 7. Review and activate the ignored local multibagger methodology as described in `MULTIBAGGER_SCORING.md`.
 8. Run the tests, health check, source probes, and one manual poll in that order.
@@ -52,7 +52,23 @@ After private Telegram Bot setup, explicit recipient consent, and a successful m
 /path/to/php83 /home/ACCOUNT/halalpulse/cron/send-alerts.php
 ```
 
-Do not copy the placeholder paths literally. The hosting control panel normally displays both the account home path and the PHP executable path.
+## Daily maintenance
+
+Schedule login-attempt retention once per day at a quiet time:
+
+```sh
+/path/to/php83 /home/ACCOUNT/halalpulse/cron/prune-login-attempts.php
+```
+
+The command removes at most the configured number of oldest rows that are beyond the retention cutoff. It preserves recent rows used by throttling and never performs an unbounded cleanup inside a login request.
+
+After private backup configuration and a successful manual encrypted backup/decryption test, schedule backup creation at a different daily time:
+
+```sh
+/path/to/php83 /home/ACCOUNT/halalpulse/cron/create-backup.php
+```
+
+Keep these jobs at different minutes. Do not copy placeholder paths literally. The hosting control panel normally displays both the account home path and the PHP executable path.
 
 ## Expected output
 
@@ -62,7 +78,7 @@ If the command says `not_configured`, both source flags are still false. This is
 
 The document command makes requests only for newly discovered quarterly-result candidates with an official attachment. It does not poll every company. If the host lacks `pdftotext` or disables `proc_open`, downloads still complete and the dashboard marks those PDFs for manual review.
 
-The government command makes at most one request per enabled publisher each hour. It performs no automatic approval: announcements remain in the authenticated Tailwinds queue until a human records a reviewed decision.
+The government command makes at most one request per enabled publisher each hour. It performs no automatic approval: announcements remain in the authenticated Tailwinds queue until a human recordss a reviewed decision.
 
 The NSE Integrated worker returns `succeeded`, `partial`, `skipped`, or `not_configured`. A partial result means the feed was safely recorded but at least one XBRL remains in the retry queue. See `NSE_INTEGRATED_RSS.md` before enabling it.
 
