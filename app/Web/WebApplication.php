@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace HalalPulse\Web;
 
+use HalalPulse\Alerts\AlertRecipientCrypto;
+use HalalPulse\Alerts\AlertRecipientRepository;
+use HalalPulse\Alerts\AlertRepository;
 use HalalPulse\Auth\AuthenticationService;
 use HalalPulse\Auth\LoginRateLimiter;
 use HalalPulse\Auth\PasswordHasher;
@@ -14,13 +17,11 @@ use HalalPulse\Dashboard\DashboardRepository;
 use HalalPulse\Database;
 use HalalPulse\Documents\DocumentReadRepository;
 use HalalPulse\Government\GovernmentRepository;
-use HalalPulse\Alerts\AlertRepository;
-use HalalPulse\Alerts\AlertRecipientCrypto;
-use HalalPulse\Alerts\AlertRecipientRepository;
-use HalalPulse\Support\JsonLogger;
+use HalalPulse\Multibagger\MultibaggerRepository;
+use HalalPulse\Operations\OperationsReadinessRepository;
 use HalalPulse\Sharia\ShariaInputCandidateRepository;
 use HalalPulse\Sharia\ShariaRepository;
-use HalalPulse\Multibagger\MultibaggerRepository;
+use HalalPulse\Support\JsonLogger;
 use PDO;
 use RuntimeException;
 
@@ -41,6 +42,7 @@ final readonly class WebApplication
         public GovernmentRepository $government,
         public AlertRepository $alerts,
         public AlertRecipientRepository $alertRecipients,
+        public OperationsReadinessRepository $operations,
     ) {
     }
 
@@ -86,6 +88,7 @@ final readonly class WebApplication
             government: new GovernmentRepository($pdo),
             alerts: new AlertRepository($pdo),
             alertRecipients: new AlertRecipientRepository($pdo, new AlertRecipientCrypto($appKey)),
+            operations: new OperationsReadinessRepository($pdo),
         );
     }
 }
