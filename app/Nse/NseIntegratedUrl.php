@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace HalalPulse\Nse;
 
+use HalalPulse\Support\OfficialHttpsUrl;
+
 final class NseIntegratedUrl
 {
+    private const ARCHIVE_HOST = 'nsearchives.nseindia.com';
+
     public static function isAllowedFeed(string $url): bool
     {
         return $url === 'https://nsearchives.nseindia.com/content/RSS/Integrated_Filing_Financials.xml';
@@ -13,17 +17,12 @@ final class NseIntegratedUrl
 
     public static function isAllowedXbrl(string $url): bool
     {
-        $parts = parse_url($url);
-        if (!is_array($parts)) {
+        if (!OfficialHttpsUrl::isAllowed($url, [self::ARCHIVE_HOST], false)) {
             return false;
         }
 
-        if (strtolower((string) ($parts['scheme'] ?? '')) !== 'https'
-            || strtolower((string) ($parts['host'] ?? '')) !== 'nsearchives.nseindia.com'
-            || isset($parts['user'])
-            || isset($parts['pass'])
-            || isset($parts['query'])
-            || isset($parts['fragment'])) {
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
             return false;
         }
 
