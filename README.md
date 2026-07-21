@@ -19,10 +19,11 @@ Private, personal-use intelligence platform for detecting new NSE/BSE quarterly-
 - An immutable potential score is recorded only after a company-and-period readiness gate confirms the Sharia pass, every factor, valuation, and risk evidence.
 - Database and private evidence backups must be encrypted, authenticated, verified, stored outside `public_html`, and tested through isolated extraction.
 - No secret, password, cookie, bot token, recipient address, or backup passphrase belongs in Git.
+- The interface is a light premium research product; Sharia compliance does not make green the brand color. Green is reserved for genuine semantic success states.
 
 ## Current milestone
 
-Milestone 20 completes the code-level release, account-security, and bounded-maintenance control plane:
+Milestone 21 completes the code-level release, account-security, bounded-maintenance, transport-security, and visual control plane:
 
 - the multibagger company page discovers real reporting periods and reports exact score blockers;
 - incomplete or stale factor, valuation, risk, macro, or Sharia evidence cannot create an immutable score;
@@ -31,8 +32,10 @@ Milestone 20 completes the code-level release, account-security, and bounded-mai
 - an authenticated Operations page reports runtime, source, policy, methodology, backup, and alert readiness;
 - tracked repository content is audited for private configuration, backup material, credentials, production paths, and temporary-domain leakage;
 - authenticated session identifiers rotate periodically without extending idle or absolute lifetimes;
-- password changes and command-line resets revoke every previously issued browser session; and
-- failed-login history is retained and pruned through a bounded daily maintenance command rather than an unbounded delete during authentication.
+- password changes and command-line resets revoke every previously issued browser session;
+- failed-login history is retained and pruned through a bounded daily maintenance command rather than an unbounded delete during authentication;
+- official-source and Telegram transports apply strict URL, header, body, timeout, and redaction boundaries; and
+- the former dark-green interface is replaced with a light ivory, stone, charcoal, bronze, and blue-grey design system with automated contrast and regression checks.
 
 The current structured mapper suggests only `total_revenue` from an NSE total-income fact, or a lower-confidence revenue-from-operations fallback. It does not infer interest-bearing debt, deposits, impermissible income, business permissibility, DCF assumptions, governance quality, factor grades, or investment suitability. A pending candidate remains missing evidence until an administrator reviews and accepts it under an active verified policy.
 
@@ -112,6 +115,7 @@ An incomplete readiness report is not automatically a code failure. It identifie
 ## Documentation
 
 - `docs/AUTHENTICATION.md` — login threat model, first-admin procedure, password reset, sessions, and bounded login-history retention.
+- `docs/DESIGN_SYSTEM.md` — light luxury palette, semantic color rules, typography, component direction, and accessibility guard.
 - `docs/DOCUMENT_PIPELINE.md` — official-document allowlist, private storage, integrity, extraction, and human review.
 - `docs/SHARIA_SCREENING.md` — policy provenance, exact-decimal screening, XBRL candidates, and evidence readiness.
 - `docs/MULTIBAGGER_SCORING.md` — methodology readiness, factor anchors, company evidence readiness, valuation, risks, and alerts.
