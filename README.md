@@ -15,13 +15,14 @@ Private, personal-use intelligence platform for detecting new NSE/BSE quarterly-
 - Structured XBRL values are review candidates, never automatic religious or investment conclusions.
 - An AAOIFI policy must cite official AAOIFI material and retain exact clause, numerator, and denominator definitions for every ratio.
 - A screening cannot be recorded until the active policy, primary-source activity review, and period-specific financial evidence pass the readiness gate.
+- A multibagger methodology must retain official evidence requirements and grade anchors for every factor, plus explicit valuation and microcap rules.
 - No secret, password, cookie, bot token, or recipient address belongs in Git.
 
 ## Current milestone
 
-Milestone 13 adds a company-and-period evidence-readiness gate. HalalPulse now identifies the applicable reporting periods from stored results, accepted inputs, and XBRL candidates; reports every missing or conflicting item; requires meaningful primary-source business-activity reviews; and blocks premature immutable screenings in both the interface and POST handler.
+Milestone 14 adds an auditable multibagger-methodology readiness gate. Every factor now requires explicit evidence requirements and grade anchors for 1, 4, 7, and 10. The methodology also retains its review horizon, minimum evidence-note lengths, official-source rules, DCF assumption requirements, market-cap rationale, and microcap-adjustment rationale inside the canonical hash.
 
-The current structured mapper suggests only `total_revenue` from an NSE total-income fact, or a lower-confidence revenue-from-operations fallback. It does not infer interest-bearing debt, deposits, impermissible income, business permissibility, DCF assumptions, governance quality, or investment suitability. A pending candidate remains missing evidence until an administrator reviews and accepts it under an active verified policy.
+The current structured mapper suggests only `total_revenue` from an NSE total-income fact, or a lower-confidence revenue-from-operations fallback. It does not infer interest-bearing debt, deposits, impermissible income, business permissibility, DCF assumptions, governance quality, factor grades, or investment suitability. A pending candidate remains missing evidence until an administrator reviews and accepts it under an active verified policy.
 
 ## Repository layout
 
@@ -47,14 +48,16 @@ tests/               Dependency-free test harness
 7. For the Sharia module, copy `config/sharia-policy.example.json` to the ignored `config/sharia-policy.local.json`. Verify the exact official Standard No. 21 edition, language, clauses, maxima, numerator definitions, and denominator basis; do not invent missing values.
 8. Run `php cron/check-sharia-policy.php config/sharia-policy.local.json`. This readiness check makes no database changes and must report `[READY]` before activation.
 9. Activate the independently reviewed policy with `php cron/install-sharia-policy.php config/sharia-policy.local.json`.
-10. Copy `config/multibagger-methodology.example.json` to the ignored `config/multibagger-methodology.local.json`, review every factor and assumption, approve it, then run `php cron/install-multibagger-methodology.php config/multibagger-methodology.local.json`.
-11. Apply migrations `006_government_tailwinds.sql`, `007_alert_delivery.sql`, `008_telegram_alerts.sql`, `009_nse_integrated_rss.sql`, `010_nse_activity_exclusions.sql`, and `011_sharia_xbrl_candidates.sql` in order on an existing installation. Until migrations 010 and 011 are consolidated into the canonical schema, fresh installations apply both immediately after importing `database/schema.sql`.
-12. Run `php tests/run.php`, `php tests/screening-ranking.php`, `php tests/sharia-policy-readiness.php`, `php tests/sharia-evidence-readiness.php`, and `php cron/healthcheck.php`.
-13. Point the domain document root at this project's `public_html` directory and sign in over HTTPS.
-14. Run `php cron/probe-sources.php NSE BSE` from the hosting account. This makes one request to each exchange and does not write to the database.
-15. Run `php cron/probe-government-sources.php PIB SEBI RBI MCA BUDGET`; enable only each source that succeeds with plausible official records.
-16. Follow `docs/NSE_INTEGRATED_RSS.md`, validate one CLI sync, then configure `sync-nse-integrated.php` every five minutes. Configure the legacy filings, government, and bounded document jobs hourly at different minutes.
-17. Follow `docs/ALERT_DELIVERY.md`; keep alerts disabled until the private bot token, `/start` consent, encrypted database recipient, and manual smoke-test gates are complete.
+10. Copy `config/multibagger-methodology.example.json` to the ignored `config/multibagger-methodology.local.json` and independently review every factor, evidence requirement, grade anchor, weight, valuation assumption, market-cap band, and microcap adjustment.
+11. Run `php cron/check-multibagger-methodology.php config/multibagger-methodology.local.json`. It makes no database changes and must report `[READY]` before activation.
+12. Activate the approved methodology with `php cron/install-multibagger-methodology.php config/multibagger-methodology.local.json`.
+13. Apply migrations `006_government_tailwinds.sql`, `007_alert_delivery.sql`, `008_telegram_alerts.sql`, `009_nse_integrated_rss.sql`, `010_nse_activity_exclusions.sql`, and `011_sharia_xbrl_candidates.sql` in order on an existing installation. Until migrations 010 and 011 are consolidated into the canonical schema, fresh installations apply both immediately after importing `database/schema.sql`.
+14. Run `php tests/run.php`, `php tests/screening-ranking.php`, `php tests/sharia-policy-readiness.php`, `php tests/sharia-evidence-readiness.php`, `php tests/multibagger-methodology-readiness.php`, and `php cron/healthcheck.php`.
+15. Point the domain document root at this project's `public_html` directory and sign in over HTTPS.
+16. Run `php cron/probe-sources.php NSE BSE` from the hosting account. This makes one request to each exchange and does not write to the database.
+17. Run `php cron/probe-government-sources.php PIB SEBI RBI MCA BUDGET`; enable only each source that succeeds with plausible official records.
+18. Follow `docs/NSE_INTEGRATED_RSS.md`, validate one CLI sync, then configure `sync-nse-integrated.php` every five minutes. Configure the legacy filings, government, and bounded document jobs hourly at different minutes.
+19. Follow `docs/ALERT_DELIVERY.md`; keep alerts disabled until the private bot token, `/start` consent, encrypted database recipient, and manual smoke-test gates are complete.
 
 `config/config.local.php` is ignored by Git. Application code, configuration, SQL, logs, and cron files remain outside `public_html`.
 
@@ -68,7 +71,7 @@ See `docs/DOCUMENT_PIPELINE.md` for the PDF allowlist, storage/integrity model, 
 
 See `docs/SHARIA_SCREENING.md` for the policy activation gate, clause-level provenance, evidence-readiness rules, exact-decimal formulas, immutable evidence trail, screening behavior, XBRL evidence candidates, and the distinction between policy compliance and the custom rank.
 
-See `docs/MULTIBAGGER_SCORING.md` for factor weights, score direction, dual valuation, microcap adjustments, official-source rules, Sharia eligibility, and the alert gate.
+See `docs/MULTIBAGGER_SCORING.md` for methodology readiness, evidence requirements, grade anchors, factor weights, score direction, dual valuation, microcap adjustments, official-source rules, Sharia eligibility, and the alert gate.
 
 See `docs/GOVERNMENT_TAILWINDS.md` for the five official contracts, production-host probes, classifier boundary, and human approval workflow.
 
