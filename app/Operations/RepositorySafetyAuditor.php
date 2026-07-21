@@ -104,7 +104,10 @@ final class RepositorySafetyAuditor
     private function normalizePath(string $path): string
     {
         $path = str_replace('\\', '/', trim($path));
-        $path = ltrim($path, './');
+        while (str_starts_with($path, './')) {
+            $path = substr($path, 2);
+        }
+        $path = ltrim($path, '/');
 
         return str_contains($path, "\0") ? '' : $path;
     }
