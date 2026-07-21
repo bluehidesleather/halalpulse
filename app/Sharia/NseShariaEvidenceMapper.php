@@ -134,6 +134,10 @@ final class NseShariaEvidenceMapper
         $whole = ltrim($whole, '0');
         $whole = $whole === '' ? '0' : $whole;
         $fraction = rtrim($fraction, '0');
+        if (strlen($whole) > 30 || strlen($fraction) > 6) {
+            return null;
+        }
+
         $normalized = $whole . ($fraction === '' ? '' : '.' . $fraction);
 
         return $normalized === '0' ? null : $normalized;
