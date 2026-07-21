@@ -66,6 +66,7 @@ jobs:
           php tests/run.php
           php tests/screening-ranking.php
           php tests/sharia-policy-readiness.php
+          php tests/sharia-evidence-readiness.php
 
       - name: Verify NSE prohibited-activity exclusion rule
         run: |
@@ -128,7 +129,7 @@ jobs:
             );
           '
 
-      - name: Verify idempotent existing-filing backfill
+      - name: Verify idempotent backfill and evidence periods
         env:
           MYSQL_PWD: halalpulse_ci
         run: |
@@ -182,6 +183,7 @@ jobs:
           php cron/backfill-sharia-candidates.php --limit=10
           candidate_count="$(mysql --protocol=TCP -N -B -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test -e "SELECT COUNT(*) FROM sharia_input_candidates WHERE source_fact_name='Income' AND candidate_value=123456789;")"
           test "$candidate_count" -eq 1
+          php tests/sharia-evidence-readiness-db.php
 
       - name: Run deployment health check
         run: php cron/healthcheck.php

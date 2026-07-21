@@ -17,10 +17,11 @@ A screening can be `passed`, `failed`, or `insufficient`.
 - An AAOIFI policy citing a third-party, draft, consultation, or announcement URL: installation is refused.
 - A ratio without an exact governing clause, numerator definition, or denominator definition: installation is refused.
 - Prohibited business-activity review: `failed` before ratio calculation.
-- Pending or mixed business-activity review: `insufficient`.
-- Missing required numerator or denominator: `insufficient`.
-- Mismatched currencies: `insufficient`.
-- Zero denominator: `insufficient`.
+- Pending or mixed business-activity review: screening remains blocked.
+- A decisive activity review without meaningful primary evidence: saving is refused.
+- Missing required numerator or denominator: screening remains blocked.
+- Mismatched currencies: screening remains blocked.
+- Zero denominator: screening remains blocked.
 - Missing PHP `bcmath`: calculation is refused.
 - Any complete required ratio above its maximum: `failed`.
 - Only a permissible activity review with every required ratio complete and within its maximum can be `passed`.
@@ -70,12 +71,39 @@ The local policy file is ignored by Git. Activation stores a canonical policy ha
 
 The private `Sharia` page lists companies already observed in official exchange filings. For each company, the administrator:
 
-1. records a business-activity classification, description, source URL, and rationale;
-2. selects a reporting period and reviews each input required by the active policy;
-3. records currency, unit scale, evidence note, and an official source reference;
-4. runs the screening only after reviewing the current evidence set.
+1. records a business-activity classification, description, primary source URL, and rationale;
+2. selects a reporting period observed in accepted inputs, XBRL candidates, or stored financial results;
+3. reviews each input required by the active policy;
+4. records currency, unit scale, evidence note, and an official source reference;
+5. resolves every readiness blocker before running the screening.
 
 Activity reviews are append-only. Replacing a financial input marks the previous record `superseded` rather than deleting it. Every screening stores the policy ID, activity snapshot, ratios, reasons, normalized input snapshot, user, and timestamp.
+
+## Company evidence-readiness gate
+
+The company workbench computes readiness before displaying or accepting a screening action. The same assessment is repeated on POST, so bypassing the disabled browser button cannot create a premature immutable screening.
+
+For a `permissible` activity review, readiness requires:
+
+- an active clause-verified policy;
+- a meaningful activity description and review rationale;
+- a public HTTPS primary-evidence URL;
+- every input used by a required ratio for the selected period;
+- valid decimal values and supported unit scales;
+- matching numerator and denominator currencies;
+- denominators greater than zero.
+
+A pending structured candidate is shown as a review opportunity, but it remains a blocker until an administrator accepts it. Optional ratio inputs may remain absent, but an optional ratio that has accepted conflicting or invalid evidence can still block a clean calculation.
+
+A `prohibited` activity review is ready to record a failed result without collecting irrelevant financial ratios because the screening engine stops at the activity gate. `pending` and `mixed` activity reviews are not ready to create an immutable result.
+
+The reporting-period selector uses the union of:
+
+- current accepted Sharia inputs;
+- structured XBRL candidates;
+- stored NSE integrated financial results.
+
+This prevents a newly observed company from defaulting to today's date when its actual financial period is already known.
 
 ## Structured NSE XBRL candidates
 
@@ -120,4 +148,4 @@ Failed and insufficient results have no rank. Investment/multibagger scoring rem
 
 ## Synthetic tests
 
-`tests/fixtures/sharia_policy.json` deliberately contains made-up thresholds and clause references and is labeled as a test-only policy. It verifies approval gating, official-source gating, clause provenance, missing-threshold rejection, exact boundary behavior, rank boundaries, unit normalization, missing evidence, currency mismatch, and activity gating. Its values are not religious guidance and must never be activated in production.
+`tests/fixtures/sharia_policy.json` deliberately contains made-up thresholds and clause references and is labeled as a test-only policy. It verifies approval gating, official-source gating, clause provenance, missing-threshold rejection, exact boundary behavior, rank boundaries, unit normalization, missing evidence, currency mismatch, activity gating, primary-evidence validation, and the company readiness boundary. Its values are not religious guidance and must never be activated in production.

@@ -14,13 +14,14 @@ Private, personal-use intelligence platform for detecting new NSE/BSE quarterly-
 - Conventional banking-taxonomy filings are retained as excluded source evidence and never enter financial scoring or alerts.
 - Structured XBRL values are review candidates, never automatic religious or investment conclusions.
 - An AAOIFI policy must cite official AAOIFI material and retain exact clause, numerator, and denominator definitions for every ratio.
+- A screening cannot be recorded until the active policy, primary-source activity review, and period-specific financial evidence pass the readiness gate.
 - No secret, password, cookie, bot token, or recipient address belongs in Git.
 
 ## Current milestone
 
-Milestone 12 strengthens the policy-activation gate. A policy can now be checked without changing the database, AAOIFI draft or third-party sources are rejected, and each ratio must retain clause-level provenance and reviewed numerator/denominator definitions. The XBRL candidate page clearly labels acceptance as unavailable until a verified policy is active.
+Milestone 13 adds a company-and-period evidence-readiness gate. HalalPulse now identifies the applicable reporting periods from stored results, accepted inputs, and XBRL candidates; reports every missing or conflicting item; requires meaningful primary-source business-activity reviews; and blocks premature immutable screenings in both the interface and POST handler.
 
-The current structured mapper suggests only `total_revenue` from an NSE total-income fact, or a lower-confidence revenue-from-operations fallback. It does not infer interest-bearing debt, deposits, impermissible income, business permissibility, DCF assumptions, governance quality, or investment suitability.
+The current structured mapper suggests only `total_revenue` from an NSE total-income fact, or a lower-confidence revenue-from-operations fallback. It does not infer interest-bearing debt, deposits, impermissible income, business permissibility, DCF assumptions, governance quality, or investment suitability. A pending candidate remains missing evidence until an administrator reviews and accepts it under an active verified policy.
 
 ## Repository layout
 
@@ -48,7 +49,7 @@ tests/               Dependency-free test harness
 9. Activate the independently reviewed policy with `php cron/install-sharia-policy.php config/sharia-policy.local.json`.
 10. Copy `config/multibagger-methodology.example.json` to the ignored `config/multibagger-methodology.local.json`, review every factor and assumption, approve it, then run `php cron/install-multibagger-methodology.php config/multibagger-methodology.local.json`.
 11. Apply migrations `006_government_tailwinds.sql`, `007_alert_delivery.sql`, `008_telegram_alerts.sql`, `009_nse_integrated_rss.sql`, `010_nse_activity_exclusions.sql`, and `011_sharia_xbrl_candidates.sql` in order on an existing installation. Until migrations 010 and 011 are consolidated into the canonical schema, fresh installations apply both immediately after importing `database/schema.sql`.
-12. Run `php tests/run.php`, `php tests/screening-ranking.php`, `php tests/sharia-policy-readiness.php`, and `php cron/healthcheck.php`.
+12. Run `php tests/run.php`, `php tests/screening-ranking.php`, `php tests/sharia-policy-readiness.php`, `php tests/sharia-evidence-readiness.php`, and `php cron/healthcheck.php`.
 13. Point the domain document root at this project's `public_html` directory and sign in over HTTPS.
 14. Run `php cron/probe-sources.php NSE BSE` from the hosting account. This makes one request to each exchange and does not write to the database.
 15. Run `php cron/probe-government-sources.php PIB SEBI RBI MCA BUDGET`; enable only each source that succeeds with plausible official records.
@@ -65,7 +66,7 @@ See `docs/AUTHENTICATION.md` for the login threat model, first-admin procedure, 
 
 See `docs/DOCUMENT_PIPELINE.md` for the PDF allowlist, storage/integrity model, optional text extractor, and mandatory human-review gate.
 
-See `docs/SHARIA_SCREENING.md` for the policy activation gate, clause-level provenance, exact-decimal formulas, immutable evidence trail, screening behavior, XBRL evidence candidates, and the distinction between policy compliance and the custom rank.
+See `docs/SHARIA_SCREENING.md` for the policy activation gate, clause-level provenance, evidence-readiness rules, exact-decimal formulas, immutable evidence trail, screening behavior, XBRL evidence candidates, and the distinction between policy compliance and the custom rank.
 
 See `docs/MULTIBAGGER_SCORING.md` for factor weights, score direction, dual valuation, microcap adjustments, official-source rules, Sharia eligibility, and the alert gate.
 
