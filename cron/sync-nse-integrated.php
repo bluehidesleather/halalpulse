@@ -12,6 +12,8 @@ use HalalPulse\Nse\NseIntegratedStore;
 use HalalPulse\Nse\NseIntegratedSyncService;
 use HalalPulse\Nse\NseSyncRequestRepository;
 use HalalPulse\Nse\XmlArchive;
+use HalalPulse\Sharia\NseShariaEvidenceMapper;
+use HalalPulse\Sharia\ShariaInputCandidateStore;
 use HalalPulse\Support\JsonLogger;
 
 if (PHP_SAPI !== 'cli') {
@@ -42,6 +44,8 @@ try {
         archive: new XmlArchive($config->requireString('sources.nse_integrated_rss.storage_path')),
         store: new NseIntegratedStore($pdo),
         activityExclusions: new NseActivityExclusionService($pdo),
+        shariaEvidenceMapper: new NseShariaEvidenceMapper(),
+        shariaCandidateStore: new ShariaInputCandidateStore($pdo),
         logger: new JsonLogger($config->requireString('app.log_path')),
         feedUrl: $config->requireString('sources.nse_integrated_rss.endpoint'),
         batchSize: (int) $config->get('sources.nse_integrated_rss.batch_size', 20),
