@@ -9,8 +9,12 @@ final class OfficialUrl
     /** @param list<string> $allowedHosts */
     public static function attachment(?string $value, string $baseUrl, array $allowedHosts): ?string
     {
-        $value = trim((string) $value);
+        $value = (string) $value;
         if ($value === '' || strlen($value) > 4096 || preg_match('/[\x00-\x1f\x7f]/', $value) === 1) {
+            return null;
+        }
+        $value = trim($value);
+        if ($value === '') {
             return null;
         }
 
