@@ -21,7 +21,8 @@
     padding: .9rem;
     border: 1px solid var(--border-soft);
     border-radius: 12px;
-    background: rgba(0, 0, 0, .12);
+    background: linear-gradient(145deg, var(--surface), var(--surface-2));
+    box-shadow: var(--shadow-soft);
 }
 
 .readiness-check p {
