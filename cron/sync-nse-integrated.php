@@ -7,6 +7,7 @@ use HalalPulse\Database;
 use HalalPulse\Http\HttpClientFactory;
 use HalalPulse\Nse\IntegratedRssParser;
 use HalalPulse\Nse\IntegratedXbrlParser;
+use HalalPulse\Nse\NseActivityExclusionService;
 use HalalPulse\Nse\NseIntegratedStore;
 use HalalPulse\Nse\NseIntegratedSyncService;
 use HalalPulse\Nse\NseSyncRequestRepository;
@@ -40,6 +41,7 @@ try {
         xbrlParser: new IntegratedXbrlParser(),
         archive: new XmlArchive($config->requireString('sources.nse_integrated_rss.storage_path')),
         store: new NseIntegratedStore($pdo),
+        activityExclusions: new NseActivityExclusionService($pdo),
         logger: new JsonLogger($config->requireString('app.log_path')),
         feedUrl: $config->requireString('sources.nse_integrated_rss.endpoint'),
         batchSize: (int) $config->get('sources.nse_integrated_rss.batch_size', 20),
