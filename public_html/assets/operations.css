@@ -1,0 +1,75 @@
+.readiness-panel,
+.methodology-guide,
+.operations-summary {
+    margin-top: 1rem;
+}
+
+.readiness-link {
+    margin: 1rem 0 0;
+}
+
+.readiness-check-list {
+    display: grid;
+    gap: .75rem;
+}
+
+.readiness-check {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: .9rem;
+    padding: .9rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, .12);
+}
+
+.readiness-check p {
+    margin: .2rem 0 0;
+    color: var(--muted);
+    font-size: .82rem;
+}
+
+.operations-gates {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.operations-gates .metric-card {
+    min-height: 145px;
+}
+
+.operations-gates .metric-card strong {
+    font-size: 1.65rem;
+}
+
+.methodology-guide .factor-card {
+    align-content: start;
+}
+
+.methodology-guide .factor-card > small {
+    display: block;
+    margin-top: .45rem;
+    line-height: 1.45;
+}
+
+@media (max-width: 1180px) {
+    .operations-gates {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .operations-gates,
+    .sync-grid,
+    .review-grid,
+    .flag-grid,
+    .form-row,
+    .settings-grid,
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .readiness-check {
+        grid-template-columns: 1fr;
+    }
+}
