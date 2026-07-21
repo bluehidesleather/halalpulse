@@ -89,7 +89,7 @@ final class DashboardRepository
     /**
      * @return array{
      *   available: bool, last_run_status: ?string, last_run_at: ?string,
-     *   feed_last_build_at: ?string, processed: int, failed: int, pending: int,
+     *   feed_last_build_at: ?string, processed: int, excluded: int, failed: int, pending: int,
      *   manual_request_status: ?string
      * }
      */
@@ -103,6 +103,7 @@ final class DashboardRepository
                     (SELECT started_at FROM nse_integrated_sync_runs ORDER BY id DESC LIMIT 1) AS last_run_at,
                     (SELECT feed_last_build_at FROM nse_integrated_sync_runs ORDER BY id DESC LIMIT 1) AS feed_last_build_at,
                     (SELECT COUNT(*) FROM nse_integrated_feed_items WHERE status = 'processed') AS processed,
+                    (SELECT COUNT(*) FROM nse_integrated_feed_items WHERE status = 'excluded') AS excluded,
                     (SELECT COUNT(*) FROM nse_integrated_feed_items WHERE status = 'failed') AS failed,
                     (SELECT COUNT(*) FROM nse_integrated_feed_items WHERE status IN ('pending', 'processing')) AS pending,
                     (
@@ -119,6 +120,7 @@ final class DashboardRepository
                 'last_run_at' => isset($row['last_run_at']) ? (string) $row['last_run_at'] : null,
                 'feed_last_build_at' => isset($row['feed_last_build_at']) ? (string) $row['feed_last_build_at'] : null,
                 'processed' => (int) ($row['processed'] ?? 0),
+                'excluded' => (int) ($row['excluded'] ?? 0),
                 'failed' => (int) ($row['failed'] ?? 0),
                 'pending' => (int) ($row['pending'] ?? 0),
                 'manual_request_status' => isset($row['manual_request_status'])
@@ -132,6 +134,7 @@ final class DashboardRepository
                 'last_run_at' => null,
                 'feed_last_build_at' => null,
                 'processed' => 0,
+                'excluded' => 0,
                 'failed' => 0,
                 'pending' => 0,
                 'manual_request_status' => null,
