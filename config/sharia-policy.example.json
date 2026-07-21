@@ -4,9 +4,9 @@
   "authority_name": "AAOIFI",
   "authority_standard": "Sharia Standard No. 21",
   "authority_reference_url": "https://aaoifi.com/ss-21-financial-paper-shares-and-bonds/?lang=en",
-  "effective_date": "2026-01-01",
-  "verified_by": "REPLACE-WITH-REVIEWER",
-  "verification_note": "Replace this note after checking the current official or licensed standard text and documenting the exact clauses used.",
+  "effective_date": "REPLACE-WITH-YYYY-MM-DD",
+  "verified_by": "REPLACE-WITH-INDEPENDENT-REVIEWER",
+  "verification_note": "REPLACE with the exact official edition, language, access date, governing clauses, denominator basis, and review conclusion. Do not use an exposure draft or an unofficial translation as the governing text.",
   "approved_for_use": false,
   "ratios": [
     {
@@ -15,7 +15,10 @@
       "numerator_key": "interest_bearing_debt",
       "denominator_key": "policy_reference_value",
       "max_percent": null,
-      "required": true
+      "required": true,
+      "source_clause": "REPLACE-WITH-EXACT-OFFICIAL-CLAUSE",
+      "numerator_definition": "REPLACE with the exact official definition and inclusions for interest-bearing debt.",
+      "denominator_definition": "REPLACE with the exact official denominator and measurement basis."
     },
     {
       "key": "deposit_ratio",
@@ -23,7 +26,10 @@
       "numerator_key": "interest_bearing_deposits",
       "denominator_key": "policy_reference_value",
       "max_percent": null,
-      "required": true
+      "required": true,
+      "source_clause": "REPLACE-WITH-EXACT-OFFICIAL-CLAUSE",
+      "numerator_definition": "REPLACE with the exact official definition and inclusions for interest-bearing deposits.",
+      "denominator_definition": "REPLACE with the exact official denominator and measurement basis."
     },
     {
       "key": "impermissible_income_ratio",
@@ -31,7 +37,10 @@
       "numerator_key": "impermissible_income",
       "denominator_key": "total_revenue",
       "max_percent": null,
-      "required": true
+      "required": true,
+      "source_clause": "REPLACE-WITH-EXACT-OFFICIAL-CLAUSE",
+      "numerator_definition": "REPLACE with the exact official definition and inclusions for impermissible income.",
+      "denominator_definition": "REPLACE with the exact official revenue denominator and measurement basis."
     }
   ]
 }
