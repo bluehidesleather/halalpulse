@@ -2,7 +2,9 @@
 
 ## Safety boundary
 
-HalalPulse does not ship numerical Sharia thresholds and does not claim that a remembered or internet-copied formula is current. AAOIFI publishes an official page for [Sharia Standard No. 21](https://aaoifi.com/ss-21-financial-paper-shares-and-bonds/?lang=en), and its [Sharia standards catalogue](https://aaoifi.com/shariah-standards-3/?lang=en) states that standards are updated. The administrator must verify the current official or properly licensed standard text before activating a local policy.
+HalalPulse does not ship numerical Sharia thresholds and does not claim that a remembered or internet-copied formula is current. AAOIFI lists **Sharia Standard No. 21 — Financial Paper (Shares and Bonds)** on its official standards catalogue and provides an official e-standards access route. AAOIFI also states that stakeholders should refer to its website regularly and that it does not approve copies circulated through other channels.
+
+The 2026 AAOIFI announcement for the draft English translation of Standards 1–61 explicitly labels that translation unofficial and directs users to the official website version or the latest printed official edition. Therefore an exposure draft, announcement page, third-party summary, screener methodology, social-media post, or remembered threshold must never become the governing HalalPulse policy source.
 
 The software applies a supplied policy deterministically. It is a research aid, not a fatwa, religious ruling, investment recommendation, or substitute for a qualified Sharia adviser.
 
@@ -12,6 +14,8 @@ A screening can be `passed`, `failed`, or `insufficient`.
 
 - No active policy: screening is unavailable.
 - Unapproved policy or missing threshold: installation is refused.
+- An AAOIFI policy citing a third-party, draft, consultation, or announcement URL: installation is refused.
+- A ratio without an exact governing clause, numerator definition, or denominator definition: installation is refused.
 - Prohibited business-activity review: `failed` before ratio calculation.
 - Pending or mixed business-activity review: `insufficient`.
 - Missing required numerator or denominator: `insufficient`.
@@ -23,14 +27,42 @@ A screening can be `passed`, `failed`, or `insufficient`.
 
 There is no floating-point fallback. Values are kept as decimal strings, normalized to base units with `bcmath`, and compared at an eight-decimal calculation scale.
 
+## Policy verification fields
+
+Every ratio in the local policy must record all of the following:
+
+- exact machine keys for the numerator and denominator;
+- exact decimal maximum;
+- exact official clause reference;
+- the reviewed definition and inclusions for the numerator;
+- the reviewed denominator and measurement basis;
+- whether the ratio is required.
+
+These fields are retained inside the canonical `ratios_json` snapshot and are included in the policy SHA-256 identity. Changing a threshold, definition, or clause therefore changes the policy content and requires a new version.
+
 ## Policy lifecycle
 
 1. Apply `database/migrations/004_sharia_screening.sql` to an existing installation.
-2. Copy `config/sharia-policy.example.json` to `config/sharia-policy.local.json`.
-3. Use the current official or licensed standard text to verify the policy's ratio definitions, denominators, maxima, effective date, and applicability.
-4. Replace every placeholder, document the reviewer and verification note, set `approved_for_use` to `true`, and retain the supporting source outside Git if licensing requires it.
-5. Run `php cron/install-sharia-policy.php config/sharia-policy.local.json`.
-6. Confirm the printed version and SHA-256, then run `php cron/healthcheck.php`.
+2. Copy `config/sharia-policy.example.json` to the ignored `config/sharia-policy.local.json`.
+3. Access the current official AAOIFI e-standard or latest printed official edition and verify Standard No. 21.
+4. Record the exact edition, language, access date, governing clauses, ratio definitions, denominator basis, maxima, effective date, and applicability.
+5. Have an independent qualified reviewer confirm the mapping from the official text to every JSON field.
+6. Replace every placeholder but keep `approved_for_use` as `false` while the file is still under review.
+7. Run the non-mutating readiness check:
+
+```sh
+php cron/check-sharia-policy.php config/sharia-policy.local.json
+```
+
+8. Resolve every `[BLOCKED]` item. The command makes no database changes.
+9. After final approval, set `approved_for_use` to `true` and run the readiness check again.
+10. Activate only a `[READY]` file:
+
+```sh
+php cron/install-sharia-policy.php config/sharia-policy.local.json
+```
+
+11. Confirm the printed version and SHA-256, then run `php cron/healthcheck.php`.
 
 The local policy file is ignored by Git. Activation stores a canonical policy hash and deactivates the previous policy inside a transaction. Old policies and old screening snapshots are not deleted. Reusing a version with different content is refused; changed policy content requires a new version.
 
@@ -62,7 +94,7 @@ The first supported mapping is deliberately narrow:
 
 The mapper does **not** reinterpret `OtherIncome` as impermissible income, `DebtEquityRatio` as interest-bearing debt, or any unrelated balance-sheet fact as an AAOIFI input. Missing evidence remains missing.
 
-An administrator may accept a pending candidate only when its metric key is required by the active policy. Acceptance supersedes the previous current input for the same company, period and metric, stores the XBRL item and fact provenance, and records the reviewer and time. Rejection also remains in the audit trail.
+An administrator may accept a pending candidate only when its metric key is required by the active policy. Acceptance supersedes the previous current input for the same company, period and metric, stores the XBRL item and fact provenance, and records the reviewer and time. Rejection also remains in the audit trail. The interface labels acceptance as `Policy required` while the policy gate is closed.
 
 For an existing installation, apply migration 011 before deploying the worker code. Then create candidates for already processed filings with:
 
@@ -88,4 +120,4 @@ Failed and insufficient results have no rank. Investment/multibagger scoring rem
 
 ## Synthetic tests
 
-`tests/fixtures/sharia_policy.json` deliberately contains made-up thresholds and is labeled as a test-only policy. It verifies approval gating, missing-threshold rejection, exact boundary behavior, rank boundaries, unit normalization, missing evidence, currency mismatch, and activity gating. Its values are not religious guidance and must never be activated in production.
+`tests/fixtures/sharia_policy.json` deliberately contains made-up thresholds and clause references and is labeled as a test-only policy. It verifies approval gating, official-source gating, clause provenance, missing-threshold rejection, exact boundary behavior, rank boundaries, unit normalization, missing evidence, currency mismatch, and activity gating. Its values are not religious guidance and must never be activated in production.
