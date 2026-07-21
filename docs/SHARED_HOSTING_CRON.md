@@ -78,7 +78,7 @@ If the command says `not_configured`, both source flags are still false. This is
 
 The document command makes requests only for newly discovered quarterly-result candidates with an official attachment. It does not poll every company. If the host lacks `pdftotext` or disables `proc_open`, downloads still complete and the dashboard marks those PDFs for manual review.
 
-The government command makes at most one request per enabled publisher each hour. It performs no automatic approval: announcements remain in the authenticated Tailwinds queue until a human recordss a reviewed decision.
+The government command makes at most one request per enabled publisher each hour. It performs no automatic approval: announcements remain in the authenticated Tailwinds queue until a human records a reviewed decision.
 
 The NSE Integrated worker returns `succeeded`, `partial`, `skipped`, or `not_configured`. A partial result means the feed was safely recorded but at least one XBRL remains in the retry queue. See `NSE_INTEGRATED_RSS.md` before enabling it.
 
