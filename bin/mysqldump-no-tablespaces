@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+MYSQLDUMP_BIN="${HALALPULSE_MYSQLDUMP_BIN:-/usr/bin/mysqldump}"
+
+if [ ! -x "$MYSQLDUMP_BIN" ]; then
+    echo "mysqldump is unavailable at the configured system path." >&2
+    exit 127
+fi
+
+exec "$MYSQLDUMP_BIN" --no-tablespaces "$@"
