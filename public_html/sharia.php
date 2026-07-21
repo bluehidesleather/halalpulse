@@ -18,6 +18,29 @@ $policy = $app->sharia->activePolicy();
 $summary = $app->sharia->summary();
 $companies = $app->sharia->companies();
 
+usort($companies, static function (array $left, array $right): int {
+    $priority = static function (array $company): array {
+        $status = (string) ($company['screening_status'] ?? 'not_screened');
+        $rank = isset($company['compliance_rank']) ? (int) $company['compliance_rank'] : 99;
+        $statusOrder = match ($status) {
+            'passed' => 0,
+            'insufficient' => 1,
+            'failed' => 2,
+            default => 3,
+        };
+
+        return [
+            $statusOrder,
+            $status === 'passed' ? $rank : 99,
+            mb_strtolower((string) ($company['company_name'] ?? '')),
+            (string) ($company['exchange'] ?? ''),
+            (string) ($company['symbol'] ?? ''),
+        ];
+    };
+
+    return $priority($left) <=> $priority($right);
+});
+
 Page::begin(
     'Sharia screening',
     (string) $config->get('app.name', 'HalalPulse'),
@@ -49,6 +72,11 @@ Page::begin(
     <article class="metric-card"><span>Activity reviewed</span><strong><?= Page::escape($summary['reviewed']) ?></strong><small>Latest human classification</small></article>
     <article class="metric-card metric-accent"><span>Latest pass</span><strong><?= Page::escape($summary['passed']) ?></strong><small>Under a recorded policy version</small></article>
     <article class="metric-card"><span>Needs attention</span><strong><?= Page::escape($summary['failed'] + $summary['insufficient']) ?></strong><small><?= Page::escape($summary['failed']) ?> failed · <?= Page::escape($summary['insufficient']) ?> insufficient</small></article>
+</section>
+
+<section class="notice-card">
+    <strong>Rank direction</strong>
+    <p>Rank 1 is the cleanest passing result. Rank 5 is still a pass, but it is closest to one or more active-policy maximums.</p>
 </section>
 
 <section class="panel panel-results">
