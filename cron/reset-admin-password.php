@@ -70,4 +70,4 @@ if ($violations !== []) {
 }
 
 $users->updatePasswordHash($user->id, (new PasswordHasher())->hash($password));
-fwrite(STDOUT, "Administrator password reset successfully.\n");
+fwrite(STDOUT, "Administrator password reset successfully. All existing web sessions were revoked.\n");
