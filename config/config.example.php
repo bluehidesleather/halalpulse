@@ -16,6 +16,7 @@ return [
         'session_name' => 'halalpulse_session',
         'session_idle_seconds' => 1800,
         'session_absolute_seconds' => 43200,
+        'session_rotation_seconds' => 900,
         'login_max_attempts' => 5,
         'login_window_seconds' => 900,
     ],

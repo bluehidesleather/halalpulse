@@ -15,6 +15,7 @@ $commands = [
     'backup encryption tests' => [$php, $root . '/tests/backup-encryption.php'],
     'operations readiness tests' => [$php, $root . '/tests/operations-readiness.php'],
     'repository safety tests' => [$php, $root . '/tests/repository-safety.php'],
+    'session security tests' => [$php, $root . '/tests/session-security.php'],
     'public repository safety audit' => [$php, $root . '/cron/audit-repository.php'],
     'deployment health check' => [$php, $root . '/cron/healthcheck.php'],
 ];

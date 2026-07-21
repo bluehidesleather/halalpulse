@@ -8,12 +8,20 @@ use RuntimeException;
 
 final class SessionManager
 {
+    private readonly SessionSecurityPolicy $securityPolicy;
+
     public function __construct(
         private readonly string $name,
         private readonly int $idleSeconds,
         private readonly int $absoluteSeconds,
         private readonly bool $secureCookie,
+        int $rotationSeconds = 900,
     ) {
+        $this->securityPolicy = new SessionSecurityPolicy(
+            idleSeconds: $idleSeconds,
+            absoluteSeconds: $absoluteSeconds,
+            rotationSeconds: $rotationSeconds,
+        );
     }
 
     public function start(): void
@@ -28,6 +36,7 @@ final class SessionManager
 
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_only_cookies', '1');
+        ini_set('session.use_trans_sid', '0');
         ini_set('session.cookie_httponly', '1');
         ini_set('session.cookie_samesite', 'Strict');
         ini_set('session.gc_maxlifetime', (string) max($this->idleSeconds, $this->absoluteSeconds));
@@ -44,17 +53,18 @@ final class SessionManager
             throw new RuntimeException('Unable to start the session.');
         }
 
-        $this->expireStaleAuthentication();
+        $this->enforceAuthenticationTiming();
     }
 
     public function login(User $user): void
     {
-        session_regenerate_id(true);
+        $this->regenerateSessionId();
         $now = time();
         $_SESSION['auth'] = [
             'user_id' => $user->id,
             'created_at' => $now,
             'last_activity_at' => $now,
+            'last_regenerated_at' => $now,
         ];
         $this->rotateCsrfToken();
     }
@@ -69,6 +79,8 @@ final class SessionManager
         $user = $users->findActiveById((int) $userId);
         if ($user === null) {
             unset($_SESSION['auth']);
+            $this->regenerateSessionId();
+            $this->rotateCsrfToken();
             return null;
         }
 
@@ -133,27 +145,39 @@ final class SessionManager
 
     public function regenerate(): void
     {
-        session_regenerate_id(true);
+        $this->regenerateSessionId();
+        if (isset($_SESSION['auth']) && is_array($_SESSION['auth'])) {
+            $_SESSION['auth']['last_regenerated_at'] = time();
+        }
         $this->rotateCsrfToken();
     }
 
-    private function expireStaleAuthentication(): void
+    private function enforceAuthenticationTiming(): void
     {
         $auth = $_SESSION['auth'] ?? null;
         if (!is_array($auth)) {
             return;
         }
 
-        $now = time();
-        $created = (int) ($auth['created_at'] ?? 0);
-        $lastActivity = (int) ($auth['last_activity_at'] ?? 0);
-        $idleExpired = $lastActivity <= 0 || ($now - $lastActivity) > $this->idleSeconds;
-        $absoluteExpired = $created <= 0 || ($now - $created) > $this->absoluteSeconds;
-
-        if ($idleExpired || $absoluteExpired) {
+        $assessment = $this->securityPolicy->evaluate($auth);
+        if ($assessment['expired']) {
             unset($_SESSION['auth']);
+            $this->regenerateSessionId();
             $this->rotateCsrfToken();
             $this->flash('warning', 'Your session expired. Please sign in again.');
+            return;
+        }
+
+        if ($assessment['rotate']) {
+            $this->regenerateSessionId();
+            $_SESSION['auth']['last_regenerated_at'] = $assessment['evaluated_at'];
+        }
+    }
+
+    private function regenerateSessionId(): void
+    {
+        if (!session_regenerate_id(true)) {
+            throw new RuntimeException('Unable to rotate the secure session identifier.');
         }
     }
 }

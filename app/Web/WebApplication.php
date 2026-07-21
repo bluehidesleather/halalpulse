@@ -61,6 +61,7 @@ final readonly class WebApplication
             idleSeconds: (int) $config->get('security.session_idle_seconds', 1800),
             absoluteSeconds: (int) $config->get('security.session_absolute_seconds', 43200),
             secureCookie: (bool) $config->get('app.force_https', true),
+            rotationSeconds: (int) $config->get('security.session_rotation_seconds', 900),
         );
         $session->start();
         $hasher = new PasswordHasher();
