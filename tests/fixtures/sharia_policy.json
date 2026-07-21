@@ -6,7 +6,7 @@
   "authority_reference_url": "https://example.test/synthetic-policy",
   "effective_date": "2026-01-01",
   "verified_by": "Automated test fixture",
-  "verification_note": "Made-up thresholds used only to verify software boundary behavior.",
+  "verification_note": "Made-up thresholds and clause references used only to verify software boundary behavior.",
   "approved_for_use": true,
   "ratios": [
     {
@@ -15,7 +15,10 @@
       "numerator_key": "test_debt",
       "denominator_key": "test_reference_value",
       "max_percent": "40",
-      "required": true
+      "required": true,
+      "source_clause": "Synthetic clause 1.1",
+      "numerator_definition": "Synthetic test debt included solely for automated validation.",
+      "denominator_definition": "Synthetic reference value included solely for automated validation."
     },
     {
       "key": "synthetic_income_ratio",
@@ -23,7 +26,10 @@
       "numerator_key": "test_flagged_income",
       "denominator_key": "test_total_revenue",
       "max_percent": "10",
-      "required": true
+      "required": true,
+      "source_clause": "Synthetic clause 1.2",
+      "numerator_definition": "Synthetic flagged income included solely for automated validation.",
+      "denominator_definition": "Synthetic total revenue included solely for automated validation."
     }
   ]
 }

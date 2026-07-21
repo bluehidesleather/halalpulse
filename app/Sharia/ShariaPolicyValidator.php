@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace HalalPulse\Sharia;
 
-use DateTimeImmutable;
 use InvalidArgumentException;
 
 final class ShariaPolicyValidator
@@ -21,11 +20,26 @@ final class ShariaPolicyValidator
      *   verified_by: string,
      *   verification_note: string,
      *   approved_for_use: bool,
-     *   ratios: list<array{key: string, label: string, numerator_key: string, denominator_key: string, max_percent: string, required: bool}>
+     *   ratios: list<array{
+     *     key: string,
+     *     label: string,
+     *     numerator_key: string,
+     *     denominator_key: string,
+     *     max_percent: string,
+     *     required: bool,
+     *     source_clause: string,
+     *     numerator_definition: string,
+     *     denominator_definition: string
+     *   }>
      * }
      */
     public function validate(array $input, bool $requireApproval = true): array
     {
+        $readiness = (new ShariaPolicyReadinessInspector())->inspect($input, $requireApproval);
+        if ($readiness['errors'] !== []) {
+            throw new InvalidArgumentException($readiness['errors'][0]);
+        }
+
         $version = $this->requiredText($input, 'version', 64);
         $name = $this->requiredText($input, 'name', 191);
         $authorityName = $this->requiredText($input, 'authority_name', 191);
@@ -36,74 +50,21 @@ final class ShariaPolicyValidator
         $verificationNote = $this->requiredText($input, 'verification_note', 1000);
         $approved = ($input['approved_for_use'] ?? null) === true;
 
-        foreach ([$version, $name, $authorityName, $authorityStandard, $verifiedBy, $verificationNote] as $text) {
-            if (stripos($text, 'REPLACE') !== false) {
-                throw new InvalidArgumentException('Policy placeholders must be replaced before installation.');
-            }
-        }
-        if (mb_strlen($verifiedBy) < 3 || mb_strlen($verificationNote) < 20) {
-            throw new InvalidArgumentException('Policy reviewer and verification note are not sufficiently specific.');
-        }
-
-        if ($requireApproval && !$approved) {
-            throw new InvalidArgumentException('The policy must set approved_for_use to true before installation.');
-        }
-
-        if (filter_var($referenceUrl, FILTER_VALIDATE_URL) === false || !str_starts_with(strtolower($referenceUrl), 'https://')) {
-            throw new InvalidArgumentException('authority_reference_url must be a valid HTTPS URL.');
-        }
-
-        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $effectiveDate);
-        if ($date === false || $date->format('Y-m-d') !== $effectiveDate) {
-            throw new InvalidArgumentException('effective_date must use the YYYY-MM-DD format.');
-        }
-
-        $ratioInput = $input['ratios'] ?? null;
-        if (!is_array($ratioInput) || !array_is_list($ratioInput) || $ratioInput === []) {
-            throw new InvalidArgumentException('ratios must be a non-empty JSON list.');
-        }
-
+        /** @var list<array<string, mixed>> $ratioInput */
+        $ratioInput = $input['ratios'];
         $ratios = [];
-        $seen = [];
 
         foreach ($ratioInput as $index => $ratio) {
-            if (!is_array($ratio)) {
-                throw new InvalidArgumentException("Ratio {$index} must be an object.");
-            }
-
-            $key = $this->ratioKey($ratio, 'key', $index);
-            $label = $this->ratioText($ratio, 'label', $index, 191);
-            $numerator = $this->ratioKey($ratio, 'numerator_key', $index);
-            $denominator = $this->ratioKey($ratio, 'denominator_key', $index);
-            $maximum = $ratio['max_percent'] ?? null;
-            $required = $ratio['required'] ?? null;
-
-            if (isset($seen[$key])) {
-                throw new InvalidArgumentException("Ratio key {$key} is duplicated.");
-            }
-            if ($numerator === $denominator) {
-                throw new InvalidArgumentException("Ratio {$key} must use different numerator and denominator inputs.");
-            }
-            if (!is_string($maximum) && !is_int($maximum)) {
-                throw new InvalidArgumentException("Ratio {$key} max_percent must be a decimal string.");
-            }
-
-            $maximum = (string) $maximum;
-            if (!DecimalMath::isDecimal($maximum) || !$this->percentageIsInRange($maximum)) {
-                throw new InvalidArgumentException("Ratio {$key} max_percent must be greater than 0 and no more than 100.");
-            }
-            if (!is_bool($required)) {
-                throw new InvalidArgumentException("Ratio {$key} required must be true or false.");
-            }
-
-            $seen[$key] = true;
             $ratios[] = [
-                'key' => $key,
-                'label' => $label,
-                'numerator_key' => $numerator,
-                'denominator_key' => $denominator,
-                'max_percent' => $maximum,
-                'required' => $required,
+                'key' => $this->ratioKey($ratio, 'key', $index),
+                'label' => $this->ratioText($ratio, 'label', $index, 191),
+                'numerator_key' => $this->ratioKey($ratio, 'numerator_key', $index),
+                'denominator_key' => $this->ratioKey($ratio, 'denominator_key', $index),
+                'max_percent' => (string) $ratio['max_percent'],
+                'required' => (bool) $ratio['required'],
+                'source_clause' => $this->ratioText($ratio, 'source_clause', $index, 191),
+                'numerator_definition' => $this->ratioText($ratio, 'numerator_definition', $index, 1000),
+                'denominator_definition' => $this->ratioText($ratio, 'denominator_definition', $index, 1000),
             ];
         }
 
@@ -181,18 +142,5 @@ final class ShariaPolicyValidator
         }
 
         return $value;
-    }
-
-    private function percentageIsInRange(string $value): bool
-    {
-        [$whole, $fraction] = array_pad(explode('.', $value, 2), 2, '');
-        $wholeNumber = (int) $whole;
-        $hasNonZeroFraction = trim($fraction, '0') !== '';
-
-        if ($wholeNumber === 0 && !$hasNonZeroFraction) {
-            return false;
-        }
-
-        return $wholeNumber < 100 || $wholeNumber === 100 && !$hasNonZeroFraction;
     }
 }
