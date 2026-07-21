@@ -8,8 +8,14 @@ use JsonException;
 
 final readonly class TelegramBotClient
 {
+    private TelegramRequestPolicy $requestPolicy;
+
     public function __construct(private AlertConfiguration $configuration)
     {
+        $this->requestPolicy = new TelegramRequestPolicy(
+            botToken: $configuration->botToken,
+            maxRequestBytes: $configuration->maxRequestBytes,
+        );
     }
 
     public function send(string $chatId, string $body): ProviderMessageResult
@@ -72,9 +78,9 @@ final readonly class TelegramBotClient
             ]);
             $chats[$chatId] = [
                 'chat_id' => $chatId,
-                'type' => is_string($chat['type'] ?? null) ? $chat['type'] : 'unknown',
+                'type' => is_string($chat['type'] ?? null) ? mb_substr($chat['type'], 0, 32) : 'unknown',
                 'label' => mb_substr(implode(' ', $labelParts) ?: 'Telegram recipient', 0, 100),
-                'last_update_id' => is_int($update['update_id'] ?? null) ? $update['update_id'] : 0,
+                'last_update_id' => is_int($update['update_id'] ?? null) && $update['update_id'] >= 0 ? $update['update_id'] : 0,
             ];
         }
 
@@ -87,31 +93,59 @@ final readonly class TelegramBotClient
         if (!extension_loaded('curl')) {
             throw new TelegramApiException('The PHP cURL extension is required for Telegram delivery.', outcomeKnown: true);
         }
-        $url = 'https://api.telegram.org/bot' . $this->configuration->botToken . '/' . $method;
+        $this->configuration->assertTransportReady();
+        $url = $this->requestPolicy->endpoint($method);
+        $requestBody = $this->requestPolicy->encodeParameters($parameters);
         $handle = curl_init($url);
         if ($handle === false) {
             throw new TelegramApiException('Unable to initialize the Telegram request.', outcomeKnown: true);
         }
-        $requestBody = json_encode($parameters, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
         $responseBody = '';
-        $tooLarge = false;
+        $responseHeaders = [];
+        $bodyTooLarge = false;
+        $headersTooLarge = false;
+        $headerBytes = 0;
         curl_setopt_array($handle, [
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_MAXREDIRS => 0,
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTPS,
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $requestBody,
             CURLOPT_HTTPHEADER => ['Accept: application/json', 'Content-Type: application/json'],
             CURLOPT_CONNECTTIMEOUT => min(10, $this->configuration->timeoutSeconds),
             CURLOPT_TIMEOUT => $this->configuration->timeoutSeconds,
+            CURLOPT_NOSIGNAL => true,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
-            CURLOPT_WRITEFUNCTION => function ($curl, string $chunk) use (&$responseBody, &$tooLarge): int {
+            CURLOPT_HEADERFUNCTION => function ($curl, string $line) use (&$responseHeaders, &$headersTooLarge, &$headerBytes): int {
+                $length = strlen($line);
+                $headerBytes += $length;
+                if ($headerBytes > $this->configuration->maxHeaderBytes) {
+                    $headersTooLarge = true;
+                    return 0;
+                }
+                $parts = explode(':', $line, 2);
+                if (count($parts) === 2) {
+                    $name = strtolower(trim($parts[0]));
+                    $value = trim($parts[1]);
+                    if ($name !== '') {
+                        $responseHeaders[$name] ??= [];
+                        $responseHeaders[$name][] = $value;
+                    }
+                }
+
+                return $length;
+            },
+            CURLOPT_WRITEFUNCTION => function ($curl, string $chunk) use (&$responseBody, &$bodyTooLarge): int {
                 if (strlen($responseBody) + strlen($chunk) > $this->configuration->maxResponseBytes) {
-                    $tooLarge = true;
+                    $bodyTooLarge = true;
                     return 0;
                 }
                 $responseBody .= $chunk;
+
                 return strlen($chunk);
             },
         ]);
@@ -119,11 +153,25 @@ final readonly class TelegramBotClient
         try {
             $succeeded = curl_exec($handle);
             $status = (int) curl_getinfo($handle, CURLINFO_RESPONSE_CODE);
-            if ($tooLarge) {
+            if ($headersTooLarge) {
+                throw new TelegramApiException('Telegram response headers exceeded the configured size limit.', $status ?: null, outcomeKnown: !$sendOutcomeMayBeUnknown);
+            }
+            if ($bodyTooLarge) {
                 throw new TelegramApiException('Telegram response exceeded the configured size limit.', $status ?: null, outcomeKnown: !$sendOutcomeMayBeUnknown);
             }
             if ($succeeded === false) {
                 throw new TelegramApiException('Telegram request did not return a complete response.', $status ?: null, outcomeKnown: !$sendOutcomeMayBeUnknown);
+            }
+            $contentTypes = $responseHeaders['content-type'] ?? [];
+            $jsonContentType = $contentTypes === [];
+            foreach ($contentTypes as $contentType) {
+                if (str_contains(strtolower($contentType), 'application/json')) {
+                    $jsonContentType = true;
+                    break;
+                }
+            }
+            if (!$jsonContentType) {
+                throw new TelegramApiException('Telegram returned an unexpected content type.', $status ?: null, outcomeKnown: $status >= 400 || !$sendOutcomeMayBeUnknown);
             }
             try {
                 $payload = json_decode($responseBody, true, 64, JSON_THROW_ON_ERROR);
@@ -136,9 +184,9 @@ final readonly class TelegramBotClient
             if ($status < 200 || $status >= 300 || ($payload['ok'] ?? false) !== true) {
                 $providerCode = isset($payload['error_code']) ? (string) $payload['error_code'] : null;
                 $description = is_string($payload['description'] ?? null)
-                    ? (string) $payload['description']
+                    ? $this->requestPolicy->safeProviderDescription((string) $payload['description'])
                     : "Telegram returned HTTP {$status}.";
-                throw new TelegramApiException(mb_substr($description, 0, 500), $status, $providerCode, true);
+                throw new TelegramApiException($description, $status, $providerCode, true);
             }
 
             return $payload;

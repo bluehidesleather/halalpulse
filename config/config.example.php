@@ -143,7 +143,9 @@ return [
             // Create with @BotFather. Keep the real token only in ignored config/config.local.php.
             'bot_token' => '',
             'request_timeout_seconds' => 20,
+            'max_request_bytes' => 16384,
             'max_response_bytes' => 1048576,
+            'max_header_bytes' => 65536,
         ],
     ],
     'backups' => [
