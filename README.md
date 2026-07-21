@@ -22,14 +22,16 @@ Private, personal-use intelligence platform for detecting new NSE/BSE quarterly-
 
 ## Current milestone
 
-Milestone 17 completes the code-level release control plane:
+Milestone 19 completes the code-level release and account-security control plane:
 
-- the multibagger company page now discovers real reporting periods and reports exact score blockers;
+- the multibagger company page discovers real reporting periods and reports exact score blockers;
 - incomplete or stale factor, valuation, risk, macro, or Sharia evidence cannot create an immutable score;
 - encrypted streaming backups cover MySQL, private configuration, filing documents, and XBRL archives;
 - authenticated backup verification and isolated extraction are available from the command line;
-- an authenticated Operations page reports runtime, source, policy, methodology, backup, and alert readiness; and
-- `cron/verify-release.php` runs the complete deployment test and health-check suite in one command.
+- an authenticated Operations page reports runtime, source, policy, methodology, backup, and alert readiness;
+- tracked repository content is audited for private configuration, backup material, credentials, production paths, and temporary-domain leakage;
+- authenticated session identifiers rotate periodically without extending idle or absolute lifetimes; and
+- password changes and command-line resets revoke every previously issued browser session.
 
 The current structured mapper suggests only `total_revenue` from an NSE total-income fact, or a lower-confidence revenue-from-operations fallback. It does not infer interest-bearing debt, deposits, impermissible income, business permissibility, DCF assumptions, governance quality, factor grades, or investment suitability. A pending candidate remains missing evidence until an administrator reviews and accepts it under an active verified policy.
 
@@ -62,7 +64,7 @@ tests/               Dependency-free test harness
 10. Copy `config/multibagger-methodology.example.json` to the ignored `config/multibagger-methodology.local.json` and independently review every factor, evidence requirement, grade anchor, weight, valuation assumption, market-cap band, and microcap adjustment.
 11. Run `php cron/check-multibagger-methodology.php config/multibagger-methodology.local.json`. It makes no database changes and must report `[READY]` before activation.
 12. Activate the approved methodology with `php cron/install-multibagger-methodology.php config/multibagger-methodology.local.json`.
-13. Apply migrations `006_government_tailwinds.sql`, `007_alert_delivery.sql`, `008_telegram_alerts.sql`, `009_nse_integrated_rss.sql`, `010_nse_activity_exclusions.sql`, and `011_sharia_xbrl_candidates.sql` in order on an existing installation. Until migrations 010 and 011 are consolidated into the canonical schema, fresh installations apply both immediately after importing `database/schema.sql`.
+13. Apply migrations `006_government_tailwinds.sql`, `007_alert_delivery.sql`, `008_telegram_alerts.sql`, `009_nse_integrated_rss.sql`, `010_nse_activity_exclusions.sql`, `011_sharia_xbrl_candidates.sql`, and `012_user_auth_version.sql` in order on an existing installation. Fresh installations currently apply migrations 010–012 immediately after importing `database/schema.sql`.
 14. Configure `backups` in private configuration with a unique passphrase and paths outside `public_html`; then run `php cron/create-backup.php` and `php cron/check-backups.php --decrypt`.
 15. Run `php cron/verify-release.php` for all dependency-free suites and the deployment health check.
 16. Point the permanent HTTPS domain document root at this project's `public_html` directory and sign in.
@@ -71,6 +73,8 @@ tests/               Dependency-free test harness
 19. Follow `docs/NSE_INTEGRATED_RSS.md`, validate one CLI sync, then configure `sync-nse-integrated.php` every five minutes. Configure enabled legacy filings, government, bounded document, backup, and alert jobs at separate minutes.
 20. Follow `docs/ALERT_DELIVERY.md`; keep alerts disabled until the private bot token, `/start` consent, encrypted database recipient, and manual smoke-test gates are complete.
 21. Run `php cron/release-readiness.php` and use the authenticated `/operations.php` dashboard to distinguish completed code from external operational blockers.
+
+Applying migration 012 intentionally signs out sessions issued by older code because those sessions do not carry an authentication version. Sign in again after deployment; subsequent password changes or resets revoke all older sessions automatically.
 
 `config/config.local.php` is ignored by Git. Application code, configuration, SQL, logs, source evidence, and encrypted backups remain outside `public_html`.
 

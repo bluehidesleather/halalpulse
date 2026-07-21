@@ -41,8 +41,12 @@ if (Request::isPost()) {
     }
 
     if ($errors === []) {
-        $app->session->regenerate();
-        $app->session->flash('success', 'Your password was changed successfully.');
+        $updatedUser = $app->users->findActiveById($user->id);
+        if ($updatedUser === null) {
+            throw new RuntimeException('The administrator account became unavailable after its credential changed.');
+        }
+        $app->session->login($updatedUser);
+        $app->session->flash('success', 'Your password was changed and all other sessions were signed out.');
         Response::redirect('/settings.php');
     }
 }

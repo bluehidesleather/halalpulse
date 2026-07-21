@@ -115,13 +115,16 @@ jobs:
           mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test < database/schema.sql
           mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test < database/migrations/010_nse_activity_exclusions.sql
           mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test < database/migrations/011_sharia_xbrl_candidates.sql
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test < database/migrations/012_user_auth_version.sql
           table_count="$(mysql --protocol=TCP -N -B -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'halalpulse_test';")"
           status_type="$(mysql --protocol=TCP -N -B -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test -e "SELECT COLUMN_TYPE FROM information_schema.columns WHERE table_schema = 'halalpulse_test' AND table_name = 'nse_integrated_feed_items' AND column_name = 'status';")"
           candidate_table="$(mysql --protocol=TCP -N -B -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'halalpulse_test' AND table_name = 'sharia_input_candidates';")"
           xbrl_source_column="$(mysql --protocol=TCP -N -B -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test -e "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'halalpulse_test' AND table_name = 'sharia_financial_inputs' AND column_name = 'source_integrated_item_id';")"
+          auth_version_column="$(mysql --protocol=TCP -N -B -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test -e "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'halalpulse_test' AND table_name = 'users' AND column_name = 'auth_version';")"
           test "$table_count" -eq 30
           test "$candidate_table" -eq 1
           test "$xbrl_source_column" -eq 1
+          test "$auth_version_column" -eq 1
           case "$status_type" in *excluded*) ;; *) exit 1 ;; esac
 
       - name: Create isolated CI configuration
@@ -149,6 +152,9 @@ jobs:
             );
           '
           chmod 600 config/config.local.php
+
+      - name: Verify account-wide session revocation
+        run: php tests/account-session-revocation-db.php
 
       - name: Verify idempotent backfill and evidence periods
         env:

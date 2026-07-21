@@ -16,7 +16,7 @@ final class UserRepository
     public function findActiveByEmail(string $email): ?User
     {
         $statement = $this->pdo->prepare(
-            'SELECT id, email, display_name, password_hash, role, is_active FROM users WHERE email = :email AND is_active = 1 LIMIT 1'
+            'SELECT id, email, display_name, password_hash, role, is_active, auth_version FROM users WHERE email = :email AND is_active = 1 LIMIT 1'
         );
         $statement->execute(['email' => self::normalizeEmail($email)]);
         $row = $statement->fetch();
@@ -27,7 +27,7 @@ final class UserRepository
     public function findActiveById(int $id): ?User
     {
         $statement = $this->pdo->prepare(
-            'SELECT id, email, display_name, password_hash, role, is_active FROM users WHERE id = :id AND is_active = 1 LIMIT 1'
+            'SELECT id, email, display_name, password_hash, role, is_active, auth_version FROM users WHERE id = :id AND is_active = 1 LIMIT 1'
         );
         $statement->execute(['id' => $id]);
         $row = $statement->fetch();
@@ -81,9 +81,29 @@ final class UserRepository
     public function updatePasswordHash(int $userId, string $passwordHash): void
     {
         $statement = $this->pdo->prepare(
+            <<<'SQL'
+            UPDATE users
+            SET password_hash = :password_hash,
+                auth_version = auth_version + 1,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = :id
+            SQL
+        );
+        $statement->execute(['password_hash' => $passwordHash, 'id' => $userId]);
+        if ($statement->rowCount() !== 1) {
+            throw new RuntimeException('Unable to update the administrator credential.');
+        }
+    }
+
+    public function rehashPasswordHash(int $userId, string $passwordHash): void
+    {
+        $statement = $this->pdo->prepare(
             'UPDATE users SET password_hash = :password_hash, updated_at = CURRENT_TIMESTAMP WHERE id = :id'
         );
         $statement->execute(['password_hash' => $passwordHash, 'id' => $userId]);
+        if ($statement->rowCount() !== 1) {
+            throw new RuntimeException('Unable to refresh the administrator password hash.');
+        }
     }
 
     public function recordSuccessfulLogin(int $userId): void
@@ -99,6 +119,11 @@ final class UserRepository
 
     private function hydrate(array $row): User
     {
+        $authVersion = (int) ($row['auth_version'] ?? 0);
+        if ($authVersion < 1) {
+            throw new RuntimeException('Administrator authentication version is invalid. Apply the pending database migration.');
+        }
+
         return new User(
             id: (int) $row['id'],
             email: (string) $row['email'],
@@ -106,6 +131,7 @@ final class UserRepository
             passwordHash: (string) $row['password_hash'],
             role: (string) $row['role'],
             isActive: (bool) $row['is_active'],
+            authVersion: $authVersion,
         );
     }
 }
