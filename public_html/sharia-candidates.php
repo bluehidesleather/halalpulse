@@ -105,6 +105,13 @@ Page::begin(
 
 <?php Page::flash($app->session->consumeFlash()); ?>
 
+<?php if ($policy === null): ?>
+    <section class="notice-card notice-error policy-gate">
+        <strong>Acceptance is locked</strong>
+        <p>The green action is unavailable until a clause-verified policy is activated. Pending candidates remain unchanged. Reject only when the XBRL-to-input mapping itself is demonstrably wrong.</p>
+    </section>
+<?php endif; ?>
+
 <section class="metric-grid">
     <article class="metric-card"><span>Company</span><strong><?= Page::escape($company['symbol']) ?></strong><small><?= Page::escape($company['company_name']) ?></small></article>
     <article class="metric-card metric-accent"><span>Pending review</span><strong><?= Page::escape($pendingCount) ?></strong><small>Require administrator decision</small></article>
@@ -142,14 +149,14 @@ Page::begin(
                                         <input type="hidden" name="company_id" value="<?= Page::escape($companyId) ?>">
                                         <input type="hidden" name="candidate_id" value="<?= Page::escape($candidate['id']) ?>">
                                         <input type="hidden" name="action" value="accept_candidate">
-                                        <button class="button button-primary button-small" type="submit" <?= $policy === null ? 'disabled' : '' ?>>Accept</button>
+                                        <button class="button button-primary button-small" type="submit" <?= $policy === null ? 'disabled title="A verified policy is required before acceptance."' : '' ?>><?= $policy === null ? 'Policy required' : 'Accept' ?></button>
                                     </form>
                                     <form method="post">
                                         <input type="hidden" name="csrf_token" value="<?= Page::escape($app->session->csrfToken()) ?>">
                                         <input type="hidden" name="company_id" value="<?= Page::escape($companyId) ?>">
                                         <input type="hidden" name="candidate_id" value="<?= Page::escape($candidate['id']) ?>">
                                         <input type="hidden" name="action" value="reject_candidate">
-                                        <button class="button button-secondary button-small" type="submit">Reject</button>
+                                        <button class="button button-secondary button-small" type="submit" title="Reject only when the structured mapping is demonstrably incorrect.">Reject</button>
                                     </form>
                                 </div>
                             <?php else: ?>
