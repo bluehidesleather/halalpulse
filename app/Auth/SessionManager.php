@@ -62,6 +62,7 @@ final class SessionManager
         $now = time();
         $_SESSION['auth'] = [
             'user_id' => $user->id,
+            'auth_version' => $user->authVersion,
             'created_at' => $now,
             'last_activity_at' => $now,
             'last_regenerated_at' => $now,
@@ -76,11 +77,20 @@ final class SessionManager
             return null;
         }
 
+        $sessionAuthVersion = $_SESSION['auth']['auth_version'] ?? null;
+        if ((!is_int($sessionAuthVersion) && !ctype_digit((string) $sessionAuthVersion)) || (int) $sessionAuthVersion < 1) {
+            $this->invalidateAuthentication('Your security session was upgraded. Please sign in again.');
+            return null;
+        }
+
         $user = $users->findActiveById((int) $userId);
         if ($user === null) {
-            unset($_SESSION['auth']);
-            $this->regenerateSessionId();
-            $this->rotateCsrfToken();
+            $this->invalidateAuthentication();
+            return null;
+        }
+
+        if ((int) $sessionAuthVersion !== $user->authVersion) {
+            $this->invalidateAuthentication('Your account credential changed. Please sign in again.');
             return null;
         }
 
@@ -161,16 +171,23 @@ final class SessionManager
 
         $assessment = $this->securityPolicy->evaluate($auth);
         if ($assessment['expired']) {
-            unset($_SESSION['auth']);
-            $this->regenerateSessionId();
-            $this->rotateCsrfToken();
-            $this->flash('warning', 'Your session expired. Please sign in again.');
+            $this->invalidateAuthentication('Your session expired. Please sign in again.');
             return;
         }
 
         if ($assessment['rotate']) {
             $this->regenerateSessionId();
             $_SESSION['auth']['last_regenerated_at'] = $assessment['evaluated_at'];
+        }
+    }
+
+    private function invalidateAuthentication(?string $message = null): void
+    {
+        unset($_SESSION['auth']);
+        $this->regenerateSessionId();
+        $this->rotateCsrfToken();
+        if ($message !== null) {
+            $this->flash('warning', $message);
         }
     }
 
