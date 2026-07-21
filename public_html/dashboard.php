@@ -61,6 +61,7 @@ Page::begin(
     </div>
     <div class="sync-grid">
         <div><span>Archived XBRL</span><strong><?= Page::escape($nseIntegrated['processed']) ?></strong></div>
+        <div><span>Excluded</span><strong><?= Page::escape($nseIntegrated['excluded']) ?></strong></div>
         <div><span>Pending</span><strong><?= Page::escape($nseIntegrated['pending']) ?></strong></div>
         <div><span>Retrying</span><strong><?= Page::escape($nseIntegrated['failed']) ?></strong></div>
         <div><span>Feed build</span><strong class="sync-time"><?= Page::escape($nseIntegrated['feed_last_build_at'] ?? 'Never') ?></strong></div>
@@ -68,7 +69,8 @@ Page::begin(
     <div class="sync-actions">
         <p>
             Automatic sync runs every five minutes. The button safely queues the same duplicate-proof pipeline;
-            it does not perform a long download inside the browser request.
+            it does not perform a long download inside the browser request. Conventional banking-taxonomy filings
+            are retained as excluded evidence and are never sent into financial scoring or alerts.
         </p>
         <?php if ($user->role === 'admin'): ?>
             <form method="post" action="/sync-nse.php">
