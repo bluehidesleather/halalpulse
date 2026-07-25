@@ -1,0 +1,44 @@
+name: HalalPulse Activation Workflows
+
+"on":
+  pull_request:
+  push:
+    branches:
+      - "main"
+      - "agent/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: halalpulse-activation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-activation:
+    name: Private activation workflow validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
+
+      - name: Lint activation files
+        run: |
+          php -l app/Support/PrivateConfigEditor.php
+          php -l app/Support/CliSecretPrompt.php
+          php -l app/Alerts/AlertActivationOrigin.php
+          php -l cron/configure-backups.php
+          php -l cron/configure-telegram.php
+          php -l cron/prepare-sharia-policy.php
+          php -l cron/prepare-multibagger-methodology.php
+          php -l tests/activation-workflows.php
+
+      - name: Run activation workflow tests
+        run: php tests/activation-workflows.php
