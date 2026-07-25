@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 use HalalPulse\Alerts\AlertActivationOrigin;
 use HalalPulse\Support\PrivateConfigEditor;
+use HalalPulse\Support\PrivateTemplatePreparer;
 
 require dirname(__DIR__) . '/app/bootstrap.php';
 
@@ -24,6 +25,8 @@ $root = sys_get_temp_dir() . '/halalpulse-activation-' . bin2hex(random_bytes(8)
 $configDirectory = $root . '/config';
 mkdir($configDirectory, 0700, true);
 $configPath = $configDirectory . '/config.local.php';
+$templatePath = $configDirectory . '/template.json';
+$workingPath = $configDirectory . '/working.json';
 $initial = [
     'app' => ['environment' => 'testing'],
     'database' => ['user' => 'synthetic-user', 'password' => 'synthetic-private-value'],
@@ -32,6 +35,7 @@ $initial = [
 ];
 file_put_contents($configPath, "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($initial, true) . ";\n", LOCK_EX);
 chmod($configPath, 0600);
+file_put_contents($templatePath, "{\n  \"status\": \"template\"\n}\n", LOCK_EX);
 
 try {
     (new PrivateConfigEditor($root))->apply([
@@ -49,6 +53,14 @@ try {
     $assert(($updated['backups']['include_paths'] ?? null) === ['config/config.local.php'], 'List-valued configuration is replaced instead of retaining unexpected paths.');
     $assert((fileperms($configPath) & 0777) === 0600, 'Updated private configuration remains mode 0600.');
     $assert(glob($configDirectory . '/.config.local.*.tmp') === [], 'Atomic update leaves no secret-bearing temporary file behind.');
+
+    $preparer = new PrivateTemplatePreparer();
+    $created = $preparer->prepare($templatePath, $workingPath);
+    $assert($created && file_get_contents($workingPath) === file_get_contents($templatePath), 'Private template preparer copies the complete safe template.');
+    $assert((fileperms($workingPath) & 0777) === 0600, 'Prepared research working file is protected with mode 0600.');
+    file_put_contents($workingPath, "{\"reviewed\":false}\n", LOCK_EX);
+    $assert($preparer->prepare($templatePath, $workingPath) === false, 'Private template preparer never overwrites an existing working file.');
+    $assert(file_get_contents($workingPath) === "{\"reviewed\":false}\n", 'Existing research work remains unchanged.');
 
     $target = $configDirectory . '/target.php';
     file_put_contents($target, "<?php return [];\n", LOCK_EX);
@@ -78,7 +90,7 @@ try {
         'https://research.example.org:8443',
         'https://research.example.org/private',
         'https://user@research.example.org',
-        'https://research.example.org?token=value',
+        'https://research.example.org?view=summary',
         'https://research.example.org#fragment',
     ];
     foreach ($unsafeOrigins as $unsafeOrigin) {
@@ -91,11 +103,10 @@ try {
         $assert($rejected, "Unsafe alert origin {$unsafeOrigin} is rejected.");
     }
 } finally {
-    if (is_link($configPath) || is_file($configPath)) {
-        @unlink($configPath);
-    }
-    if (is_file($configDirectory . '/target.php')) {
-        @unlink($configDirectory . '/target.php');
+    foreach ([$configPath, $templatePath, $workingPath, $configDirectory . '/target.php'] as $path) {
+        if (is_link($path) || is_file($path)) {
+            @unlink($path);
+        }
     }
     @rmdir($configDirectory);
     @rmdir($root);
