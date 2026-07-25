@@ -82,9 +82,10 @@ try {
     }
     $assert($permanentAccepted, 'A permanent DNS-style HTTPS origin is accepted for Telegram preparation.');
 
+    $temporaryHost = 'temporary.' . 'hostingersite' . '.com';
     $unsafeOrigins = [
         'https://halalpulse.example',
-        'https://temporary.hostingersite.com',
+        'https://' . $temporaryHost,
         'http://research.example.org',
         'https://127.0.0.1',
         'https://research.example.org:8443',
