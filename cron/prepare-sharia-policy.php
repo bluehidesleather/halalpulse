@@ -3,6 +3,8 @@
 
 declare(strict_types=1);
 
+use HalalPulse\Support\PrivateTemplatePreparer;
+
 if (PHP_SAPI !== 'cli') {
     http_response_code(404);
     exit;
@@ -14,11 +16,6 @@ $source = HALALPULSE_ROOT . '/config/sharia-policy.example.json';
 $destination = HALALPULSE_ROOT . '/config/sharia-policy.local.json';
 
 try {
-    if (is_file($destination)) {
-        fwrite(STDOUT, "Private Sharia policy working file already exists. It was not overwritten.\n");
-        fwrite(STDOUT, "Check it with: php cron/check-sharia-policy.php\n");
-        exit(0);
-    }
     $json = file_get_contents($source);
     if (!is_string($json)) {
         throw new RuntimeException('Unable to read the safe policy template.');
@@ -27,21 +24,12 @@ try {
     if (!is_array($payload)) {
         throw new RuntimeException('The safe policy template must contain a JSON object.');
     }
-    $handle = fopen($destination, 'x');
-    if ($handle === false) {
-        throw new RuntimeException('Unable to create the private policy working file.');
-    }
-    try {
-        if (fwrite($handle, $json) !== strlen($json)) {
-            throw new RuntimeException('Unable to write the complete policy working file.');
-        }
-        fflush($handle);
-    } finally {
-        fclose($handle);
-    }
-    if (!chmod($destination, 0600)) {
-        @unlink($destination);
-        throw new RuntimeException('Unable to protect the private policy working file.');
+
+    $created = (new PrivateTemplatePreparer())->prepare($source, $destination);
+    if (!$created) {
+        fwrite(STDOUT, "Private Sharia policy working file already exists. It was not overwritten.\n");
+        fwrite(STDOUT, "Check it with: php cron/check-sharia-policy.php\n");
+        exit(0);
     }
 
     fwrite(STDOUT, "Created ignored config/sharia-policy.local.json with mode 0600.\n");
