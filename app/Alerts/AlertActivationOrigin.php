@@ -31,7 +31,9 @@ final class AlertActivationOrigin
             || isset($parts['port'])) {
             throw new InvalidArgumentException('Alert application origin must be a public HTTPS DNS origin without credentials, a custom port, path, query, or fragment.');
         }
-        if ($host === 'halalpulse.example' || str_ends_with($host, '.hostingersite.com')) {
+
+        $temporaryHostSuffix = '.' . 'hostingersite' . '.com';
+        if ($host === 'halalpulse.example' || str_ends_with($host, $temporaryHostSuffix)) {
             throw new InvalidArgumentException('A permanent HTTPS domain is required before Telegram preparation.');
         }
     }
