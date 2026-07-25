@@ -65,6 +65,31 @@ Page::begin(
     </section>
 <?php endif; ?>
 
+<section class="panel panel-results">
+    <div class="panel-heading">
+        <div><p class="eyebrow">Safe activation path</p><h2>Exact next commands</h2></div>
+        <span class="status">Run privately over SSH</span>
+    </div>
+    <div class="readiness-check-list">
+        <article class="readiness-check">
+            <span class="status status-manual_review">Screening</span>
+            <div><strong>Prepare the ignored AAOIFI policy working file</strong><p><span class="mono">/opt/alt/php83/usr/bin/php cron/prepare-sharia-policy.php</span><br>Complete it only from the exact official/licensed edition, run the readiness checker, obtain competent approval, and install only after a <span class="mono">[READY]</span> result.</p></div>
+        </article>
+        <article class="readiness-check">
+            <span class="status status-manual_review">Ranking</span>
+            <div><strong>Prepare the ignored methodology working file</strong><p><span class="mono">/opt/alt/php83/usr/bin/php cron/prepare-multibagger-methodology.php</span><br>Review every factor, grade anchor, evidence requirement, valuation rule, market-cap band, and microcap adjustment before activation.</p></div>
+        </article>
+        <article class="readiness-check">
+            <span class="status status-manual_review">Backups</span>
+            <div><strong>Enable, create, and authenticate the first encrypted backup</strong><p><span class="mono">/opt/alt/php83/usr/bin/php cron/configure-backups.php</span><br>The passphrase is entered without echo and is written only to ignored private configuration.</p></div>
+        </article>
+        <article class="readiness-check">
+            <span class="status status-manual_review">Alerts</span>
+            <div><strong>Prepare Telegram only after a permanent HTTPS domain is active</strong><p><span class="mono">/opt/alt/php83/usr/bin/php cron/configure-telegram.php</span><br>The command refuses the temporary Hostinger domain and leaves automatic delivery disabled until recipient consent and a manual test are complete.</p></div>
+        </article>
+    </div>
+</section>
+
 <?php foreach ($checksByCategory as $category => $checks): ?>
     <section class="panel panel-results">
         <div class="panel-heading"><div><p class="eyebrow">Gate detail</p><h2><?= Page::escape(ucfirst($category)) ?></h2></div><span class="status"><?= Page::escape(count($checks)) ?> checks</span></div>

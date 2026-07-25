@@ -20,6 +20,7 @@ $commands = [
     'official evidence URL security tests' => [$php, $root . '/tests/official-url-security.php'],
     'Telegram transport security tests' => [$php, $root . '/tests/telegram-security.php'],
     'light luxury design system tests' => [$php, $root . '/tests/design-system.php'],
+    'private activation workflow tests' => [$php, $root . '/tests/activation-workflows.php'],
     'account session revocation integration' => [$php, $root . '/tests/account-session-revocation-db.php'],
     'public repository safety audit' => [$php, $root . '/cron/audit-repository.php'],
     'deployment health check' => [$php, $root . '/cron/healthcheck.php'],
@@ -27,9 +28,11 @@ $commands = [
 
 $commit = 'unknown';
 $git = proc_open(
-    ['/usr/bin/git', '-C', $root, 'rev-parse', 'HEAD'],
+    ['git', '-C', $root, 'rev-parse', 'HEAD'],
     [0 => ['file', '/dev/null', 'rb'], 1 => ['pipe', 'rb'], 2 => ['file', '/dev/null', 'wb']],
     $gitPipes,
+    $root,
+    ['PATH' => '/usr/local/bin:/usr/bin:/bin'],
 );
 if (is_resource($git)) {
     $output = stream_get_contents($gitPipes[1]);
