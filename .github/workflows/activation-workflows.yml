@@ -32,6 +32,7 @@ jobs:
       - name: Lint activation files
         run: |
           php -l app/Support/PrivateConfigEditor.php
+          php -l app/Support/PrivateTemplatePreparer.php
           php -l app/Support/CliSecretPrompt.php
           php -l app/Alerts/AlertActivationOrigin.php
           php -l cron/configure-backups.php
