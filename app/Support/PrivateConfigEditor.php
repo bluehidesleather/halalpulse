@@ -28,7 +28,7 @@ final readonly class PrivateConfigEditor
             throw new RuntimeException('Private configuration must return an array.');
         }
 
-        $updated = array_replace_recursive($config, $patch);
+        $updated = $this->merge($config, $patch);
         $serialized = "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($updated, true) . ";\n";
         $directory = dirname($path);
         $temporary = $directory . '/.config.local.' . bin2hex(random_bytes(8)) . '.tmp';
@@ -51,5 +51,27 @@ final readonly class PrivateConfigEditor
                 @unlink($temporary);
             }
         }
+    }
+
+    /**
+     * @param array<mixed> $base
+     * @param array<mixed> $patch
+     * @return array<mixed>
+     */
+    private function merge(array $base, array $patch): array
+    {
+        foreach ($patch as $key => $value) {
+            if (is_array($value)
+                && !array_is_list($value)
+                && isset($base[$key])
+                && is_array($base[$key])
+                && !array_is_list($base[$key])) {
+                $base[$key] = $this->merge($base[$key], $value);
+                continue;
+            }
+            $base[$key] = $value;
+        }
+
+        return $base;
     }
 }
