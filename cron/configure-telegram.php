@@ -3,6 +3,7 @@
 
 declare(strict_types=1);
 
+use HalalPulse\Alerts\AlertActivationOrigin;
 use HalalPulse\Alerts\AlertConfiguration;
 use HalalPulse\Config;
 use HalalPulse\Support\CliSecretPrompt;
@@ -29,10 +30,7 @@ try {
         throw new RuntimeException('Unable to read the application origin.');
     }
     $baseUrl = rtrim($baseUrl, "\r\n/");
-    $host = strtolower((string) (parse_url($baseUrl, PHP_URL_HOST) ?? ''));
-    if ($host === '' || $host === 'halalpulse.example' || str_ends_with($host, '.hostingersite.com')) {
-        throw new RuntimeException('A permanent HTTPS domain is required before Telegram preparation.');
-    }
+    AlertActivationOrigin::assertPermanent($baseUrl);
 
     $token = CliSecretPrompt::readConfirmed('Telegram bot token', 37, 128);
     $current = require HALALPULSE_ROOT . '/config/config.local.php';
