@@ -7,11 +7,7 @@ Date: 2026-07-25
 
 The Operations dashboard intentionally distinguishes installed code from production inputs that must remain private, independently reviewed, or consent-based. The commands below reduce manual editing without weakening any readiness gate.
 
-Run every command from the project root with the locked PHP 8.3 binary on Hostinger:
-
-```sh
-cd /home/u460884935/halalpulse
-```
+Run every command from the HalalPulse project root with the locked PHP 8.3 binary on Hostinger.
 
 ## Encrypted backups
 
@@ -62,7 +58,7 @@ Methodology activation does not manufacture scores. A company must still have a 
 
 ## Telegram alerts
 
-Telegram preparation is intentionally blocked while the application uses a temporary `hostingersite.com` address. After a permanent HTTPS domain is active:
+Telegram preparation is intentionally blocked while the application uses a temporary Hostinger subdomain. After a permanent HTTPS domain is active:
 
 ```sh
 /opt/alt/php83/usr/bin/php cron/configure-telegram.php
