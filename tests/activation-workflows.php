@@ -70,7 +70,18 @@ try {
     }
     $assert($permanentAccepted, 'A permanent DNS-style HTTPS origin is accepted for Telegram preparation.');
 
-    foreach (['https://halalpulse.example', 'https://temporary.hostingersite.com'] as $unsafeOrigin) {
+    $unsafeOrigins = [
+        'https://halalpulse.example',
+        'https://temporary.hostingersite.com',
+        'http://research.example.org',
+        'https://127.0.0.1',
+        'https://research.example.org:8443',
+        'https://research.example.org/private',
+        'https://user@research.example.org',
+        'https://research.example.org?token=value',
+        'https://research.example.org#fragment',
+    ];
+    foreach ($unsafeOrigins as $unsafeOrigin) {
         $rejected = false;
         try {
             AlertActivationOrigin::assertPermanent($unsafeOrigin);
