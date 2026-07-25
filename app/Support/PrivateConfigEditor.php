@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace HalalPulse\Support;
 
 use RuntimeException;
+use Throwable;
 
 final readonly class PrivateConfigEditor
 {
@@ -32,15 +33,42 @@ final readonly class PrivateConfigEditor
         $serialized = "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($updated, true) . ";\n";
         $directory = dirname($path);
         $temporary = $directory . '/.config.local.' . bin2hex(random_bytes(8)) . '.tmp';
+        $handle = fopen($temporary, 'x');
+        if ($handle === false) {
+            throw new RuntimeException('Unable to create the temporary private configuration.');
+        }
 
+        $readyToPublish = false;
         try {
-            $bytes = file_put_contents($temporary, $serialized, LOCK_EX);
-            if (!is_int($bytes) || $bytes !== strlen($serialized)) {
-                throw new RuntimeException('Unable to write the complete private configuration.');
-            }
             if (!chmod($temporary, 0600)) {
                 throw new RuntimeException('Unable to protect the temporary private configuration.');
             }
+            $offset = 0;
+            $length = strlen($serialized);
+            while ($offset < $length) {
+                $written = fwrite($handle, substr($serialized, $offset));
+                if (!is_int($written) || $written < 1) {
+                    throw new RuntimeException('Unable to write the complete private configuration.');
+                }
+                $offset += $written;
+            }
+            if (!fflush($handle)) {
+                throw new RuntimeException('Unable to flush the temporary private configuration.');
+            }
+            if (function_exists('fsync') && !fsync($handle)) {
+                throw new RuntimeException('Unable to synchronize the temporary private configuration.');
+            }
+            $readyToPublish = true;
+        } catch (Throwable $exception) {
+            throw $exception;
+        } finally {
+            fclose($handle);
+            if (!$readyToPublish) {
+                @unlink($temporary);
+            }
+        }
+
+        try {
             if (!rename($temporary, $path)) {
                 throw new RuntimeException('Unable to publish the private configuration atomically.');
             }
