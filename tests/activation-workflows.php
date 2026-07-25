@@ -27,7 +27,7 @@ $configPath = $configDirectory . '/config.local.php';
 $initial = [
     'app' => ['environment' => 'testing'],
     'database' => ['user' => 'synthetic-user', 'password' => 'synthetic-private-value'],
-    'backups' => ['enabled' => false, 'retention_days' => 7],
+    'backups' => ['enabled' => false, 'retention_days' => 7, 'include_paths' => ['old-path', 'unexpected-path']],
     'alerts' => ['enabled' => false, 'telegram' => ['bot_token' => '']],
 ];
 file_put_contents($configPath, "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($initial, true) . ";\n", LOCK_EX);
@@ -39,12 +39,14 @@ try {
             'enabled' => true,
             'retention_days' => 14,
             'encryption_passphrase' => 'synthetic-backup-value-long-enough',
+            'include_paths' => ['config/config.local.php'],
         ],
     ]);
     $updated = require $configPath;
     $assert(is_array($updated) && $updated['backups']['enabled'] === true, 'Private configuration editor applies a nested activation patch.');
     $assert(($updated['database']['password'] ?? null) === 'synthetic-private-value', 'Private configuration editor preserves unrelated secret values.');
     $assert(($updated['backups']['retention_days'] ?? null) === 14, 'Private configuration editor replaces the requested nested value.');
+    $assert(($updated['backups']['include_paths'] ?? null) === ['config/config.local.php'], 'List-valued configuration is replaced instead of retaining unexpected paths.');
     $assert((fileperms($configPath) & 0777) === 0600, 'Updated private configuration remains mode 0600.');
     $assert(glob($configDirectory . '/.config.local.*.tmp') === [], 'Atomic update leaves no secret-bearing temporary file behind.');
 
