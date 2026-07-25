@@ -80,6 +80,38 @@ try {
         $shortPassphraseRejected = true;
     }
     $assert($shortPassphraseRejected, 'Short backup passphrases are rejected.');
+
+    $wrapper = dirname(__DIR__) . '/bin/mysqldump-no-tablespaces';
+    $capturedArguments = $directory . '/mysqldump-arguments.txt';
+    $fakeMysqldump = $directory . '/fake-mysqldump';
+    $fakeScript = "#!/bin/sh\nprintf '%s\\n' \"\$@\" > " . escapeshellarg($capturedArguments) . "\n";
+    file_put_contents($fakeMysqldump, $fakeScript, LOCK_EX);
+    chmod($fakeMysqldump, 0700);
+
+    $runWrapper = static function (array $arguments) use ($wrapper, $fakeMysqldump): int {
+        $process = proc_open(
+            array_merge([$wrapper], $arguments),
+            [0 => ['file', '/dev/null', 'rb'], 1 => ['file', '/dev/null', 'wb'], 2 => ['file', '/dev/null', 'wb']],
+            $pipes,
+            dirname(__DIR__),
+            ['HALALPULSE_MYSQLDUMP_BIN' => $fakeMysqldump, 'PATH' => '/usr/local/bin:/usr/bin:/bin'],
+        );
+        if (!is_resource($process)) {
+            return 127;
+        }
+
+        return proc_close($process);
+    };
+
+    $localhostExit = $runWrapper(['--host=localhost', '--port=3306', '--user=tester', 'halalpulse']);
+    $localhostArguments = file($capturedArguments, FILE_IGNORE_NEW_LINES) ?: [];
+    $assert($localhostExit === 0 && in_array('--no-tablespaces', $localhostArguments, true), 'The wrapper always disables tablespace metadata for least-privilege backups.');
+    $assert(in_array('--protocol=SOCKET', $localhostArguments, true), 'A localhost backup is forced through the local MySQL socket instead of IPv6 TCP.');
+
+    @unlink($capturedArguments);
+    $tcpExit = $runWrapper(['--host=127.0.0.1', '--port=3306', '--user=tester', 'halalpulse']);
+    $tcpArguments = file($capturedArguments, FILE_IGNORE_NEW_LINES) ?: [];
+    $assert($tcpExit === 0 && !in_array('--protocol=SOCKET', $tcpArguments, true), 'An explicit TCP database host remains on TCP for CI and remote-compatible deployments.');
 } finally {
     foreach (glob($directory . '/*') ?: [] as $path) {
         @unlink($path);

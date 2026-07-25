@@ -8,4 +8,16 @@ if [ ! -x "$MYSQLDUMP_BIN" ]; then
     exit 127
 fi
 
+USE_SOCKET=0
+for ARG in "$@"; do
+    if [ "$ARG" = "--host=localhost" ]; then
+        USE_SOCKET=1
+        break
+    fi
+done
+
+if [ "$USE_SOCKET" -eq 1 ]; then
+    exec "$MYSQLDUMP_BIN" --no-tablespaces --protocol=SOCKET "$@"
+fi
+
 exec "$MYSQLDUMP_BIN" --no-tablespaces "$@"
