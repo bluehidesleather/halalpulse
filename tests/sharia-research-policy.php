@@ -82,7 +82,7 @@ $assert(is_array($assetResult) && $assetResult['comparison'] === 'minimum' && $a
 $strongAssets = $base;
 $strongAssets['eligible_real_operating_assets'] = $input('60');
 $strong = $engine->screen($policy, 'permissible', $strongAssets);
-$assert($strong->status === 'passed' && $strong->complianceRank === 2, 'Stronger asset substance improves utilization while other active thresholds still determine the worst rank.');
+$assert($strong->status === 'passed' && $strong->complianceRank === 3, 'Stronger asset substance improves utilization while the 80 percent impermissible-income utilization correctly determines rank 3.');
 
 $belowMinimum = $base;
 $belowMinimum['eligible_real_operating_assets'] = $input('29.999999');
