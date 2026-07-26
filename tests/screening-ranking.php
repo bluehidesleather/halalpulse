@@ -37,11 +37,11 @@ $assert($candidates[0]['source_fact_name'] === 'Income', 'The preferred total-in
 $assert($candidates[0]['source_context_ref'] === 'OneD', 'The current reporting context is preferred.');
 $assert($candidates[0]['confidence'] === 90, 'Direct total-income evidence receives the bounded high-confidence suggestion.');
 
-$fallback = new IntegratedFinancialResult(
+$revenueOnly = new IntegratedFinancialResult(
     taxonomyUri: 'https://www.sebi.gov.in/xbrl/synthetic.xsd',
     metadata: [
-        'symbol' => 'FALLBACK',
-        'company_name' => 'Fallback Limited',
+        'symbol' => 'REVENUEONLY',
+        'company_name' => 'Revenue Only Limited',
         'period_end' => '2026-06-30',
         'currency' => 'INR',
     ],
@@ -55,12 +55,7 @@ $fallback = new IntegratedFinancialResult(
         'occurrence' => 1,
     ]],
 );
-$fallbackCandidates = $mapper->map($fallback);
-$assert(count($fallbackCandidates) === 1, 'Revenue from operations is retained only as a provisional total-income candidate.');
-$assert($fallbackCandidates[0]['metric_key'] === 'total_income', 'The fallback targets total income and cannot silently change the policy denominator.');
-$assert($fallbackCandidates[0]['value'] === '500', 'Fallback evidence is normalized without binary floating point.');
-$assert($fallbackCandidates[0]['confidence'] === 60, 'Revenue-from-operations fallback receives materially lower confidence.');
-$assert(str_contains($fallbackCandidates[0]['mapping_reason'], 'other income'), 'Fallback evidence explicitly requires other-income review before acceptance.');
+$assert($mapper->map($revenueOnly) === [], 'Revenue from operations alone is not re-labelled as consolidated total income.');
 
 $unsafeInference = new IntegratedFinancialResult(
     taxonomyUri: 'https://www.sebi.gov.in/xbrl/synthetic.xsd',
