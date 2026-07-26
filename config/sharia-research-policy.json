@@ -1,0 +1,63 @@
+{
+  "version": "halalpulse-research-ss21-strict-v1",
+  "name": "HalalPulse AAOIFI-based strict research screen",
+  "authority_name": "AAOIFI-based research interpretation and HalalPulse",
+  "authority_standard": "SS 21 research mapping plus asset-substance overlay",
+  "authority_reference_url": "https://aaoifi.com/ss-21-financial-paper-shares-and-bonds/?lang=en",
+  "effective_date": "2026-07-27",
+  "assurance_level": "research",
+  "verified_by": "HalalPulse owner-approved research methodology",
+  "verification_note": "Research-only mapping of the commonly documented SS 21 listed-share ratios to Indian public-company evidence. The official AAOIFI page establishes the referenced standard identity; this file does not claim independent scholar review. The 30 percent asset-substance minimum is an owner-defined HalalPulse investor-protection overlay and is not represented as an AAOIFI certification rule.",
+  "disclaimer": "This deterministic result is a research aid, not a fatwa, not independent Sharia certification, and not financial advice. Review primary evidence and obtain qualified advice before acting.",
+  "approved_for_use": false,
+  "ratios": [
+    {
+      "key": "debt_ratio",
+      "label": "Interest-bearing debt ratio",
+      "numerator_key": "interest_bearing_debt",
+      "denominator_key": "market_capitalization",
+      "comparison": "maximum",
+      "max_percent": "30",
+      "required": true,
+      "source_clause": "AAOIFI SS 21 research mapping: clause 3/4/2; pending independent certification",
+      "numerator_definition": "Current and non-current borrowings and other obligations that contractually bear interest or an interest-equivalent conventional finance charge, using consolidated period-end evidence and excluding ordinary trade payables unless they are interest-bearing financing.",
+      "denominator_definition": "Ordinary-equity market capitalization calculated from an official exchange closing price and outstanding ordinary shares for a documented date reasonably aligned with the reviewed financial period. The date and calculation must be retained in the evidence note."
+    },
+    {
+      "key": "interest_bearing_assets_ratio",
+      "label": "Interest-bearing deposits and investments ratio",
+      "numerator_key": "interest_bearing_deposits",
+      "denominator_key": "market_capitalization",
+      "comparison": "maximum",
+      "max_percent": "30",
+      "required": true,
+      "source_clause": "AAOIFI SS 21 research mapping: clause 3/4/3; pending independent certification",
+      "numerator_definition": "Cash deposits, fixed deposits, loans advanced, bonds and other financial assets that earn contractual interest or an interest-equivalent conventional return, using consolidated period-end evidence. Non-interest current-account cash is excluded.",
+      "denominator_definition": "Ordinary-equity market capitalization calculated from an official exchange closing price and outstanding ordinary shares for a documented date reasonably aligned with the reviewed financial period. The date and calculation must be retained in the evidence note."
+    },
+    {
+      "key": "impermissible_income_ratio",
+      "label": "Impermissible income ratio",
+      "numerator_key": "impermissible_income",
+      "denominator_key": "total_income",
+      "comparison": "maximum",
+      "max_percent": "5",
+      "required": true,
+      "source_clause": "AAOIFI SS 21 research mapping: clause 3/4/4; pending independent certification",
+      "numerator_definition": "Income identified from primary evidence as interest income or revenue from prohibited activities. Other income is not automatically classified as impermissible and must be reviewed line by line.",
+      "denominator_definition": "Consolidated total income for the reviewed period, including revenue from operations and other income, using the same period and currency as the numerator."
+    },
+    {
+      "key": "asset_substance_ratio",
+      "label": "HalalPulse real operating-asset substance",
+      "numerator_key": "eligible_real_operating_assets",
+      "denominator_key": "total_assets",
+      "comparison": "minimum",
+      "max_percent": "30",
+      "required": true,
+      "source_clause": "HalalPulse strict investor-protection rule; owner-defined and not AAOIFI certification",
+      "numerator_definition": "Net property, plant and equipment; capital work in progress; inventories; right-of-use assets used in operations; permissible investment property; biological operating assets; and other clearly evidenced physical operating assets. Exclude cash, deposits, loans, trade and financial receivables, securities and financial investments, goodwill, deferred tax assets, unsupported miscellaneous assets and intangible assets.",
+      "denominator_definition": "Consolidated total assets at the same reporting-period end and in the same currency and unit scale as eligible real operating assets."
+    }
+  ]
+}
