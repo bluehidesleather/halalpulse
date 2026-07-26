@@ -31,7 +31,7 @@ $mapper = new NseShariaEvidenceMapper();
 $parsed = (new IntegratedXbrlParser())->parse($fixture);
 $candidates = $mapper->map($parsed);
 $assert(count($candidates) === 1, 'One conservative Sharia evidence candidate is mapped from the structured filing.');
-$assert($candidates[0]['metric_key'] === 'total_revenue', 'Structured total income maps only to the total-revenue policy input.');
+$assert($candidates[0]['metric_key'] === 'total_income', 'Structured total income maps to the exact total-income research-policy input.');
 $assert($candidates[0]['value'] === '12605000000', 'The candidate retains the exact normalized XBRL value.');
 $assert($candidates[0]['source_fact_name'] === 'Income', 'The preferred total-income source fact is retained for audit.');
 $assert($candidates[0]['source_context_ref'] === 'OneD', 'The current reporting context is preferred.');
@@ -56,10 +56,11 @@ $fallback = new IntegratedFinancialResult(
     ]],
 );
 $fallbackCandidates = $mapper->map($fallback);
-$assert(count($fallbackCandidates) === 1, 'Revenue from operations is used only when total income is unavailable.');
+$assert(count($fallbackCandidates) === 1, 'Revenue from operations is retained only as a provisional total-income candidate.');
+$assert($fallbackCandidates[0]['metric_key'] === 'total_income', 'The fallback targets total income and cannot silently change the policy denominator.');
 $assert($fallbackCandidates[0]['value'] === '500', 'Fallback evidence is normalized without binary floating point.');
-$assert($fallbackCandidates[0]['confidence'] === 75, 'The revenue-from-operations fallback receives lower confidence.');
-$assert(str_contains($fallbackCandidates[0]['mapping_reason'], 'Review other income'), 'Fallback evidence explicitly requires other-income review.');
+$assert($fallbackCandidates[0]['confidence'] === 60, 'Revenue-from-operations fallback receives materially lower confidence.');
+$assert(str_contains($fallbackCandidates[0]['mapping_reason'], 'other income'), 'Fallback evidence explicitly requires other-income review before acceptance.');
 
 $unsafeInference = new IntegratedFinancialResult(
     taxonomyUri: 'https://www.sebi.gov.in/xbrl/synthetic.xsd',
