@@ -40,9 +40,10 @@ $validator = new ShariaPolicyValidator();
 $synthetic = $readJson(__DIR__ . '/fixtures/sharia_policy.json');
 
 $inspection = $inspector->inspect($synthetic);
-$assert($inspection['ready'] === true, 'A complete synthetic policy passes the non-mutating readiness inspection.');
+$assert($inspection['ready'] === true, 'A complete independently reviewed synthetic policy passes the non-mutating readiness inspection.');
 $validated = $validator->validate($synthetic);
 $assert($validated['ratios'][0]['source_clause'] === 'Synthetic clause 1.1', 'Clause provenance survives canonical policy validation.');
+$assert($validated['ratios'][0]['comparison'] === 'maximum', 'Threshold direction survives canonical policy validation.');
 $assert(str_contains($validated['ratios'][0]['numerator_definition'], 'Synthetic test debt'), 'Numerator definition survives canonical policy validation.');
 
 $draft = $synthetic;
@@ -74,9 +75,28 @@ $thirdPartyAaoifi = $officialAaoifi;
 $thirdPartyAaoifi['authority_reference_url'] = 'https://example.com/aaoifi-standard-21';
 $assert($inspector->inspect($thirdPartyAaoifi)['ready'] === false, 'An AAOIFI policy cannot cite a third-party copy as the governing source.');
 
+$research = $readJson(dirname(__DIR__) . '/config/sharia-research-policy.json');
+$researchDraft = $inspector->inspect($research, false);
+$assert($researchDraft['ready'] === true, 'The versioned research policy is structurally complete while approval remains false on disk.');
+$assert($researchDraft['warnings'] !== [], 'Research assurance always surfaces its non-certification warning.');
+$research['approved_for_use'] = true;
+$researchReady = $inspector->inspect($research, true);
+$assert($researchReady['ready'] === true, 'Explicit owner acknowledgement makes the versioned research policy activation-ready.');
+$researchValidated = $validator->validate($research);
+$assetRule = array_values(array_filter($researchValidated['ratios'], static fn (array $ratio): bool => $ratio['key'] === 'asset_substance_ratio'))[0] ?? null;
+$assert(is_array($assetRule) && $assetRule['comparison'] === 'minimum' && $assetRule['max_percent'] === '30', 'The owner-defined 30 percent asset-substance minimum is canonicalized explicitly.');
+
+$unsafeResearch = $research;
+$unsafeResearch['disclaimer'] = 'Research aid only.';
+$assert($inspector->inspect($unsafeResearch, true)['ready'] === false, 'A research policy cannot hide the fatwa and independent-certification disclaimers.');
+
+$invalidDirection = $synthetic;
+$invalidDirection['ratios'][0]['comparison'] = 'closest';
+$assert($inspector->inspect($invalidDirection)['ready'] === false, 'Unknown threshold directions are rejected.');
+
 $template = $readJson(dirname(__DIR__) . '/config/sharia-policy.example.json');
 $templateInspection = $inspector->inspect($template, false);
-$assert($templateInspection['ready'] === false, 'The shipped policy template remains deliberately unready and cannot be activated accidentally.');
+$assert($templateInspection['ready'] === false, 'The independently reviewed policy template remains deliberately unready and cannot be activated accidentally.');
 $assert(count($templateInspection['errors']) >= 3, 'The readiness inspection reports multiple unresolved template fields at once.');
 
 echo "\n{$passed} passed, {$failed} failed.\n";
