@@ -32,7 +32,7 @@ Milestone 22 adds an operational research-screening path without weakening the i
 - explicit command-line acknowledgement before research activation;
 - research-only result labels and operational warnings;
 - backward compatibility for previously stored policy hashes;
-- NSE total-income evidence mapped to the exact `total_income` denominator;
+- direct NSE total-income evidence mapped to the exact `total_income` denominator, with revenue-only filings left incomplete;
 - dedicated policy, asset-substance, compatibility, MySQL integration, and release checks;
 - encrypted streaming backups covering MySQL, private configuration, filing documents, and XBRL archives;
 - authenticated backup verification and isolated extraction;
@@ -43,7 +43,7 @@ Milestone 22 adds an operational research-screening path without weakening the i
 - strict official-source and Telegram transport boundaries; and
 - a light ivory, stone, charcoal, bronze, and blue-grey design system.
 
-The structured mapper suggests only `total_income` from a direct NSE total-income fact, or a lower-confidence provisional revenue-from-operations candidate requiring other-income review. It does not infer interest-bearing debt, deposits, impermissible income, market capitalization, eligible operating assets, total assets, business permissibility, DCF assumptions, governance quality, factor grades, or investment suitability.
+The structured mapper suggests `total_income` only from a direct NSE `Income` or `TotalIncome` fact. Revenue from operations is not re-labelled as total income. The mapper does not infer interest-bearing debt, deposits, impermissible income, market capitalization, eligible operating assets, total assets, business permissibility, DCF assumptions, governance quality, factor grades, or investment suitability.
 
 Research activation does not remove external evidence work. Company-level results still require primary-source business review and accepted period-specific financial inputs. Ranking still requires an independently reviewed multibagger methodology, official government-source coverage, and complete company evidence.
 
