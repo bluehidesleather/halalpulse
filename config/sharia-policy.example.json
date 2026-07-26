@@ -5,8 +5,10 @@
   "authority_standard": "Sharia Standard No. 21",
   "authority_reference_url": "https://aaoifi.com/ss-21-financial-paper-shares-and-bonds/?lang=en",
   "effective_date": "REPLACE-WITH-YYYY-MM-DD",
+  "assurance_level": "independently_reviewed",
   "verified_by": "REPLACE-WITH-INDEPENDENT-REVIEWER",
   "verification_note": "REPLACE with the exact official edition, language, access date, governing clauses, denominator basis, and review conclusion. Do not use an exposure draft or an unofficial translation as the governing text.",
+  "disclaimer": "REPLACE with the approved assurance boundary and user disclaimer.",
   "approved_for_use": false,
   "ratios": [
     {
@@ -14,6 +16,7 @@
       "label": "Debt screening ratio",
       "numerator_key": "interest_bearing_debt",
       "denominator_key": "policy_reference_value",
+      "comparison": "maximum",
       "max_percent": null,
       "required": true,
       "source_clause": "REPLACE-WITH-EXACT-OFFICIAL-CLAUSE",
@@ -25,6 +28,7 @@
       "label": "Interest-bearing deposit screening ratio",
       "numerator_key": "interest_bearing_deposits",
       "denominator_key": "policy_reference_value",
+      "comparison": "maximum",
       "max_percent": null,
       "required": true,
       "source_clause": "REPLACE-WITH-EXACT-OFFICIAL-CLAUSE",
@@ -35,12 +39,13 @@
       "key": "impermissible_income_ratio",
       "label": "Impermissible income screening ratio",
       "numerator_key": "impermissible_income",
-      "denominator_key": "total_revenue",
+      "denominator_key": "total_income",
+      "comparison": "maximum",
       "max_percent": null,
       "required": true,
       "source_clause": "REPLACE-WITH-EXACT-OFFICIAL-CLAUSE",
       "numerator_definition": "REPLACE with the exact official definition and inclusions for impermissible income.",
-      "denominator_definition": "REPLACE with the exact official revenue denominator and measurement basis."
+      "denominator_definition": "REPLACE with the exact official total-income denominator and measurement basis."
     }
   ]
 }
