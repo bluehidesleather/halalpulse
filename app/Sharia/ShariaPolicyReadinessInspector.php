@@ -24,8 +24,10 @@ final class ShariaPolicyReadinessInspector
             'authority_standard' => 100,
             'authority_reference_url' => 500,
             'effective_date' => 10,
+            'assurance_level' => 32,
             'verified_by' => 191,
             'verification_note' => 1000,
+            'disclaimer' => 1000,
         ];
 
         foreach ($requiredText as $key => $maximumLength) {
@@ -44,20 +46,27 @@ final class ShariaPolicyReadinessInspector
             }
         }
 
+        $assuranceLevel = is_string($input['assurance_level'] ?? null)
+            ? trim((string) $input['assurance_level'])
+            : '';
+        if (!in_array($assuranceLevel, ['research', 'independently_reviewed'], true)) {
+            $errors[] = 'assurance_level must be research or independently_reviewed.';
+        }
+
         $referenceUrl = is_string($input['authority_reference_url'] ?? null)
             ? trim((string) $input['authority_reference_url'])
             : '';
         if ($referenceUrl !== '') {
             if (filter_var($referenceUrl, FILTER_VALIDATE_URL) === false || !str_starts_with(strtolower($referenceUrl), 'https://')) {
                 $errors[] = 'authority_reference_url must be a valid HTTPS URL.';
-            } elseif (strcasecmp(trim((string) ($input['authority_name'] ?? '')), 'AAOIFI') === 0) {
+            } elseif (stripos(trim((string) ($input['authority_name'] ?? '')), 'AAOIFI') !== false) {
                 $host = strtolower((string) parse_url($referenceUrl, PHP_URL_HOST));
                 $path = strtolower((string) parse_url($referenceUrl, PHP_URL_PATH));
                 if (!in_array($host, ['aaoifi.com', 'www.aaoifi.com'], true)) {
-                    $errors[] = 'An AAOIFI policy must cite an official aaoifi.com source.';
+                    $errors[] = 'An AAOIFI-based policy must cite an official aaoifi.com source.';
                 }
                 if (str_contains($path, 'draft') || str_contains(strtolower($referenceUrl), '/announcement/')) {
-                    $errors[] = 'An AAOIFI policy cannot cite a draft, announcement, or consultation page as the governing standard text.';
+                    $errors[] = 'An AAOIFI-based policy cannot cite a draft, announcement, or consultation page as the governing reference.';
                 }
                 if (!str_contains(strtolower((string) ($input['authority_standard'] ?? '')), '21')) {
                     $warnings[] = 'Confirm that the authority_standard identifies Sharia Standard No. 21 for listed shares.';
@@ -75,18 +84,38 @@ final class ShariaPolicyReadinessInspector
 
         $verifiedBy = is_string($input['verified_by'] ?? null) ? trim((string) $input['verified_by']) : '';
         $verificationNote = is_string($input['verification_note'] ?? null) ? trim((string) $input['verification_note']) : '';
+        $disclaimer = is_string($input['disclaimer'] ?? null) ? trim((string) $input['disclaimer']) : '';
         if ($verifiedBy !== '' && mb_strlen($verifiedBy) < 3) {
-            $errors[] = 'verified_by must identify the reviewer.';
+            $errors[] = 'verified_by must identify the reviewer or research-policy preparer.';
         }
         if ($verificationNote !== '' && mb_strlen($verificationNote) < 40) {
-            $errors[] = 'verification_note must document the edition, language, clauses, and review basis.';
+            $errors[] = 'verification_note must document the edition, language, clauses, mapping basis, and limitations.';
+        }
+        if ($disclaimer !== '' && mb_strlen($disclaimer) < 40) {
+            $errors[] = 'disclaimer must clearly state the policy assurance boundary.';
+        }
+
+        if ($assuranceLevel === 'research') {
+            $normalizedDisclaimer = mb_strtolower($disclaimer);
+            if (!str_contains($normalizedDisclaimer, 'not a fatwa')) {
+                $errors[] = 'A research policy disclaimer must state that it is not a fatwa.';
+            }
+            if (!str_contains($normalizedDisclaimer, 'not independent sharia certification')) {
+                $errors[] = 'A research policy disclaimer must state that it is not independent Sharia certification.';
+            }
+            if ($verificationNote !== '' && stripos($verificationNote, 'research') === false) {
+                $errors[] = 'A research policy verification_note must explicitly identify the research-only basis.';
+            }
+            $warnings[] = 'Research assurance enables deterministic screening but does not represent a fatwa or independent Sharia certification.';
         }
 
         $approved = $input['approved_for_use'] ?? null;
         if (!is_bool($approved)) {
             $errors[] = 'approved_for_use must be a boolean.';
         } elseif ($requireApproval && !$approved) {
-            $errors[] = 'approved_for_use must be true only after independent review is complete.';
+            $errors[] = $assuranceLevel === 'research'
+                ? 'approved_for_use must be true only after the owner acknowledges research-only use and its disclaimer.'
+                : 'approved_for_use must be true only after independent review is complete.';
         }
 
         $ratios = $input['ratios'] ?? null;
@@ -108,6 +137,11 @@ final class ShariaPolicyReadinessInspector
                     $errors[] = "Ratio key {$key} is duplicated.";
                 } else {
                     $seen[$key] = true;
+                }
+
+                $comparison = is_string($ratio['comparison'] ?? null) ? trim((string) $ratio['comparison']) : '';
+                if (!in_array($comparison, ['maximum', 'minimum'], true)) {
+                    $errors[] = "Ratio {$index} comparison must be maximum or minimum.";
                 }
 
                 $textLimits = [
