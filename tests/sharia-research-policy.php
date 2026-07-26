@@ -101,5 +101,12 @@ $assert($engine->screen($policy, 'permissible', $missingTotalAssets)->status ===
 $researchPass = $engine->screen($policy, 'permissible', $base);
 $assert(str_contains(implode(' ', $researchPass->reasons), 'not independent Sharia certification'), 'A research pass snapshot retains the non-certification boundary.');
 
+$operationsPage = file_get_contents(dirname(__DIR__) . '/public_html/operations.php');
+$queuePage = file_get_contents(dirname(__DIR__) . '/public_html/sharia.php');
+$companyPage = file_get_contents(dirname(__DIR__) . '/public_html/sharia-company.php');
+$assert(is_string($operationsPage) && str_contains($operationsPage, 'activate-research-sharia-policy.php --acknowledge-research-only'), 'Operations displays the exact research activation command.');
+$assert(is_string($queuePage) && str_contains($queuePage, 'Research assurance boundary'), 'The Sharia queue displays the research assurance boundary.');
+$assert(is_string($companyPage) && str_contains($companyPage, 'Run research screening') && str_contains($companyPage, 'statusLabel'), 'The company workbench labels and runs research screening explicitly.');
+
 echo "\n{$passed} passed, {$failed} failed.\n";
 exit($failed === 0 ? 0 : 1);
