@@ -9,6 +9,7 @@ $commands = [
     'core tests' => [$php, $root . '/tests/run.php'],
     'screening and ranking tests' => [$php, $root . '/tests/screening-ranking.php'],
     'Sharia policy readiness tests' => [$php, $root . '/tests/sharia-policy-readiness.php'],
+    'Sharia research policy tests' => [$php, $root . '/tests/sharia-research-policy.php'],
     'Sharia evidence readiness tests' => [$php, $root . '/tests/sharia-evidence-readiness.php'],
     'multibagger methodology readiness tests' => [$php, $root . '/tests/multibagger-methodology-readiness.php'],
     'multibagger evidence readiness tests' => [$php, $root . '/tests/multibagger-evidence-readiness.php'],
