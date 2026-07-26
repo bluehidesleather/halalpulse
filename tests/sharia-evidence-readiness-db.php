@@ -22,9 +22,15 @@ if ($periods !== ['2026-06-30']) {
 }
 
 $candidates = $repository->pendingCandidatesForPeriod($companyId, '2026-06-30');
-if (count($candidates) !== 1 || ($candidates[0]['metric_key'] ?? null) !== 'total_revenue') {
-    fwrite(STDERR, 'Expected one pending total_revenue candidate for the stored reporting period.' . "\n");
+if (count($candidates) !== 1 || ($candidates[0]['metric_key'] ?? null) !== 'total_income') {
+    fwrite(STDERR, "Expected one pending total_income candidate for the stored reporting period.\n");
     exit(1);
 }
 
-echo "[PASS] Stored financial-result and candidate periods feed the Sharia readiness selector.\n";
+$sourceFact = (string) ($candidates[0]['source_fact_name'] ?? '');
+if (!in_array($sourceFact, ['Income', 'TotalIncome'], true)) {
+    fwrite(STDERR, "Expected the pending total_income candidate to retain its exact structured total-income fact.\n");
+    exit(1);
+}
+
+echo "[PASS] Stored financial-result and total-income candidate periods feed the Sharia readiness selector.\n";
