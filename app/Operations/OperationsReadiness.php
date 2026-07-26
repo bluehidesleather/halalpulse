@@ -152,10 +152,17 @@ final class OperationsReadiness
         }
 
         $policyVersion = (string) ($snapshot['sharia_policy_version'] ?? '');
-        $policyReady = $policyVersion !== '';
-        $add('active_sharia_policy', 'research', 'Active Sharia policy', $policyReady, $policyReady
-            ? "Active verified policy: {$policyVersion}"
-            : 'Install an independently verified, clause-level Sharia policy before screening.');
+        $policyAssurance = (string) ($snapshot['sharia_policy_assurance'] ?? '');
+        $policyReady = $policyVersion !== '' && in_array($policyAssurance, ['research', 'independently_reviewed'], true);
+        $policyDetail = match ($policyAssurance) {
+            'research' => "Active research-only screening policy: {$policyVersion}. Results are not a fatwa or independent Sharia certification.",
+            'independently_reviewed' => "Active independently reviewed screening policy: {$policyVersion}.",
+            default => 'Activate the versioned research policy with explicit acknowledgement or install an independently reviewed policy before screening.',
+        };
+        $add('active_sharia_policy', 'research', 'Active screening policy', $policyReady, $policyDetail);
+        if ($policyReady && $policyAssurance === 'research') {
+            $warnings[] = 'The active Sharia screen is research-only; every result must remain labelled as research, not certification.';
+        }
 
         $methodologyVersion = (string) ($snapshot['methodology_version'] ?? '');
         $methodologyReady = $methodologyVersion !== '';

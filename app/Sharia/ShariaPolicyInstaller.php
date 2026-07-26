@@ -24,7 +24,11 @@ final readonly class ShariaPolicyInstaller
     {
         $policy = $this->validator->validate($input);
         $hash = $this->validator->hash($policy);
-        $ratiosJson = json_encode($policy['ratios'], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        $definitionJson = json_encode([
+            'assurance_level' => $policy['assurance_level'],
+            'disclaimer' => $policy['disclaimer'],
+            'ratios' => $policy['ratios'],
+        ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         $this->pdo->beginTransaction();
 
@@ -90,7 +94,7 @@ final readonly class ShariaPolicyInstaller
                     'effective_date' => $policy['effective_date'],
                     'verified_by' => $policy['verified_by'],
                     'verification_note' => $policy['verification_note'],
-                    'ratios_json' => $ratiosJson,
+                    'ratios_json' => $definitionJson,
                     'policy_hash' => $hash,
                 ]);
             }

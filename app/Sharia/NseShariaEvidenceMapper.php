@@ -31,25 +31,13 @@ final class NseShariaEvidenceMapper
         $totalIncome = $this->candidate(
             facts: $result->facts,
             names: ['Income', 'TotalIncome'],
-            metricKey: 'total_revenue',
+            metricKey: 'total_income',
             currency: $currency,
             confidence: 90,
-            reason: 'Structured NSE XBRL total-income fact suggested as total revenue. Administrator acceptance is required.',
-        );
-        if ($totalIncome !== null) {
-            return [$totalIncome];
-        }
-
-        $revenue = $this->candidate(
-            facts: $result->facts,
-            names: ['RevenueFromOperations'],
-            metricKey: 'total_revenue',
-            currency: $currency,
-            confidence: 75,
-            reason: 'Structured NSE XBRL revenue-from-operations fact suggested as a total-revenue fallback. Review other income before acceptance.',
+            reason: 'Structured NSE XBRL total-income fact suggested as the exact total-income research-policy denominator. Administrator acceptance is required.',
         );
 
-        return $revenue === null ? [] : [$revenue];
+        return $totalIncome === null ? [] : [$totalIncome];
     }
 
     /**

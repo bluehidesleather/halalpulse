@@ -1,0 +1,51 @@
+name: HalalPulse Sharia Research Policy
+
+"on":
+  pull_request:
+  push:
+    branches:
+      - "main"
+      - "agent/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: halalpulse-sharia-research-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Research assurance and asset-substance validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: json, mbstring, bcmath
+          coverage: none
+
+      - name: Lint research policy files
+        run: |
+          php -l app/Sharia/ShariaPolicyReadinessInspector.php
+          php -l app/Sharia/ShariaPolicyValidator.php
+          php -l app/Sharia/ShariaPolicy.php
+          php -l app/Sharia/ShariaPolicyInstaller.php
+          php -l app/Sharia/ShariaScreeningEngine.php
+          php -l cron/activate-research-sharia-policy.php
+          php -l tests/sharia-research-policy.php
+
+      - name: Validate policy JSON
+        run: php -r 'json_decode((string) file_get_contents("config/sharia-research-policy.json"), true, 512, JSON_THROW_ON_ERROR);'
+
+      - name: Run policy readiness tests
+        run: php tests/sharia-policy-readiness.php
+
+      - name: Run strict research screening tests
+        run: php tests/sharia-research-policy.php

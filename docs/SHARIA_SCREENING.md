@@ -2,141 +2,164 @@
 
 ## Safety boundary
 
-HalalPulse does not ship numerical Sharia thresholds and does not claim that a remembered or internet-copied formula is current. AAOIFI lists **Sharia Standard No. 21 — Financial Paper (Shares and Bonds)** on its official standards catalogue and provides an official e-standards access route. AAOIFI also states that stakeholders should refer to its website regularly and that it does not approve copies circulated through other channels.
+HalalPulse supports two explicitly different assurance modes:
 
-The 2026 AAOIFI announcement for the draft English translation of Standards 1–61 explicitly labels that translation unofficial and directs users to the official website version or the latest printed official edition. Therefore an exposure draft, announcement page, third-party summary, screener methodology, social-media post, or remembered threshold must never become the governing HalalPulse policy source.
+1. **Research** — deterministic owner-approved screening for personal research. Results must be labelled `Research pass`, `Research fail`, or `Insufficient evidence`. This mode is not a fatwa, not independent Sharia certification, and not financial advice.
+2. **Independently reviewed** — the existing workflow for a policy mapped from an exact official or licensed standard and confirmed by a competent independent reviewer.
 
-The software applies a supplied policy deterministically. It is a research aid, not a fatwa, religious ruling, investment recommendation, or substitute for a qualified Sharia adviser.
+The two modes share the same fail-closed evidence engine but never share the same assurance claim. Activating a research policy must not imply scholar review or certification.
 
-## Fail-closed rules
+AAOIFI lists **Sharia Standard No. 21 — Financial Paper (Shares and Bonds)** on its official standards catalogue. The versioned HalalPulse research policy cites the official standard page to identify the referenced standard, but its ratio mapping is expressly research-only because HalalPulse does not possess a licensed clause-level edition or independent scholar approval.
 
-A screening can be `passed`, `failed`, or `insufficient`.
+The software is a research aid. It does not issue religious rulings or investment recommendations.
 
-- No active policy: screening is unavailable.
-- Unapproved policy or missing threshold: installation is refused.
-- An AAOIFI policy citing a third-party, draft, consultation, or announcement URL: installation is refused.
-- A ratio without an exact governing clause, numerator definition, or denominator definition: installation is refused.
-- Prohibited business-activity review: `failed` before ratio calculation.
-- Pending or mixed business-activity review: screening remains blocked.
-- A decisive activity review without meaningful primary evidence: saving is refused.
-- Missing required numerator or denominator: screening remains blocked.
-- Mismatched currencies: screening remains blocked.
-- Zero denominator: screening remains blocked.
-- Missing PHP `bcmath`: calculation is refused.
-- Any complete required ratio above its maximum: `failed`.
-- Only a permissible activity review with every required ratio complete and within its maximum can be `passed`.
+## Versioned HalalPulse strict research policy
 
-There is no floating-point fallback. Values are kept as decimal strings, normalized to base units with `bcmath`, and compared at an eight-decimal calculation scale.
+`config/sharia-research-policy.json` is tracked and reviewable. It contains:
 
-## Policy verification fields
+- interest-bearing debt ÷ market capitalization, maximum **30%**;
+- interest-bearing deposits and investments ÷ market capitalization, maximum **30%**;
+- impermissible income ÷ consolidated total income, maximum **5%**; and
+- eligible real operating assets ÷ consolidated total assets, minimum **30%**.
 
-Every ratio in the local policy must record all of the following:
+The first three are recorded as an AAOIFI SS 21 research mapping pending independent certification. The fourth is an owner-defined **HalalPulse asset-substance rule** for investor protection and must never be represented as an AAOIFI certification rule.
 
-- exact machine keys for the numerator and denominator;
-- exact decimal maximum;
-- exact official clause reference;
-- the reviewed definition and inclusions for the numerator;
-- the reviewed denominator and measurement basis;
-- whether the ratio is required.
+Eligible real operating assets include evidenced net property, plant and equipment, capital work in progress, inventories, operating right-of-use assets, permissible investment property, biological operating assets, and other clearly evidenced physical operating assets. Cash, deposits, loans, receivables, securities, financial investments, goodwill, deferred-tax assets, unsupported miscellaneous assets, and intangible assets are excluded.
 
-These fields are retained inside the canonical `ratios_json` snapshot and are included in the policy SHA-256 identity. Changing a threshold, definition, or clause therefore changes the policy content and requires a new version.
+The policy uses consolidated evidence. Market-cap evidence must record the official exchange closing price, outstanding ordinary shares, calculation date, and alignment with the reviewed reporting period.
 
-## Policy lifecycle
+## Research-policy activation
 
-1. Apply `database/migrations/004_sharia_screening.sql` to an existing installation.
-2. Copy `config/sharia-policy.example.json` to the ignored `config/sharia-policy.local.json`.
-3. Access the current official AAOIFI e-standard or latest printed official edition and verify Standard No. 21.
-4. Record the exact edition, language, access date, governing clauses, ratio definitions, denominator basis, maxima, effective date, and applicability.
-5. Have an independent qualified reviewer confirm the mapping from the official text to every JSON field.
-6. Replace every placeholder but keep `approved_for_use` as `false` while the file is still under review.
-7. Run the non-mutating readiness check:
+Research activation requires an explicit command-line acknowledgement:
+
+```sh
+php cron/activate-research-sharia-policy.php --acknowledge-research-only
+```
+
+The command:
+
+- loads only the tracked versioned research policy;
+- sets approval in memory after the explicit acknowledgement;
+- validates assurance metadata, disclaimer, threshold directions, clauses, definitions, and exact decimals;
+- activates the policy transactionally;
+- prints its version, SHA-256, assurance level, and disclaimer; and
+- keeps all previous policy records stored but inactive.
+
+The tracked JSON remains `approved_for_use: false`; it cannot be installed accidentally through the generic installer without an explicit activation decision.
+
+## Independently reviewed policy workflow
+
+The original verified-policy path remains available:
+
+1. Copy `config/sharia-policy.example.json` to ignored `config/sharia-policy.local.json`.
+2. Access the exact official or licensed standard edition.
+3. Record the edition, language, access date, clauses, ratio definitions, denominator basis, maxima or minima, effective date, and applicability.
+4. Obtain competent independent review.
+5. Keep `assurance_level` as `independently_reviewed` and `approved_for_use` as `false` until review is complete.
+6. Run:
 
 ```sh
 php cron/check-sharia-policy.php config/sharia-policy.local.json
 ```
 
-8. Resolve every `[BLOCKED]` item. The command makes no database changes.
-9. After final approval, set `approved_for_use` to `true` and run the readiness check again.
-10. Activate only a `[READY]` file:
+7. Resolve every blocker, set `approved_for_use` to `true` only after approval, and activate with:
 
 ```sh
 php cron/install-sharia-policy.php config/sharia-policy.local.json
 ```
 
-11. Confirm the printed version and SHA-256, then run `php cron/healthcheck.php`.
+A third-party summary, exposure draft, consultation page, social-media post, remembered formula, or uncontrolled copy cannot serve as the governing independently reviewed policy source.
 
-The local policy file is ignored by Git. Activation stores a canonical policy hash and deactivates the previous policy inside a transaction. Old policies and old screening snapshots are not deleted. Reusing a version with different content is refused; changed policy content requires a new version.
+## Fail-closed rules
+
+A screening can be stored as `passed`, `failed`, or `insufficient`. Presentation depends on policy assurance.
+
+- No active policy: screening is unavailable.
+- Invalid policy assurance or missing disclaimer: activation is refused.
+- Research activation without explicit acknowledgement: refused.
+- Independently reviewed policy without approval: refused.
+- Missing threshold direction, exact threshold, clause, numerator definition, or denominator definition: refused.
+- Prohibited business activity: failed before ratio calculation.
+- Pending or mixed activity review: blocked.
+- Decisive activity review without meaningful primary evidence: refused.
+- Missing required numerator or denominator: insufficient.
+- Mismatched currencies: insufficient.
+- Zero denominator: insufficient.
+- Missing PHP `bcmath`: refused.
+- Maximum ratio above its limit: failed.
+- Minimum ratio below its floor: failed.
+- Only permissible activity with every required ratio complete and within its directional threshold can pass.
+
+There is no floating-point fallback. Decimal strings are normalized to base units with `bcmath` and compared at an eight-decimal calculation scale.
+
+## Policy identity and backward compatibility
+
+Every policy retains:
+
+- assurance level and disclaimer;
+- exact machine keys;
+- threshold direction (`maximum` or `minimum`);
+- exact decimal threshold;
+- source or methodology clause;
+- numerator and denominator definitions; and
+- required/optional state.
+
+These values are included in the canonical SHA-256 identity. Changing a threshold, direction, definition, disclaimer, or assurance level requires a new policy version.
+
+Policies stored before assurance metadata was introduced remain readable and hash-verifiable as legacy independently reviewed records. New records store assurance metadata, disclaimer, and ratios inside the existing `ratios_json` column, so no database migration is required.
 
 ## Evidence workflow
 
-The private `Sharia` page lists companies already observed in official exchange filings. For each company, the administrator:
+For each observed company, the administrator:
 
-1. records a business-activity classification, description, primary source URL, and rationale;
-2. selects a reporting period observed in accepted inputs, XBRL candidates, or stored financial results;
-3. reviews each input required by the active policy;
-4. records currency, unit scale, evidence note, and an official source reference;
-5. resolves every readiness blocker before running the screening.
+1. records business activity from primary evidence;
+2. selects a real reporting period;
+3. reviews every required input under the active policy;
+4. records currency, unit scale, evidence note, and official source reference;
+5. calculates market capitalization from documented exchange evidence where required; and
+6. resolves every readiness blocker before storing an immutable screening.
 
-Activity reviews are append-only. Replacing a financial input marks the previous record `superseded` rather than deleting it. Every screening stores the policy ID, activity snapshot, ratios, reasons, normalized input snapshot, user, and timestamp.
+Activity reviews are append-only. Replacing a financial input preserves the previous record as `superseded`. Every screening stores the policy ID, activity status, directional ratio results, reasons, normalized input snapshot, user, and timestamp.
 
-## Company evidence-readiness gate
+### Research-policy input keys
 
-The company workbench computes readiness before displaying or accepting a screening action. The same assessment is repeated on POST, so bypassing the disabled browser button cannot create a premature immutable screening.
+The strict research policy requires:
 
-For a `permissible` activity review, readiness requires:
+- `interest_bearing_debt`;
+- `market_capitalization`;
+- `interest_bearing_deposits`;
+- `impermissible_income`;
+- `total_income`;
+- `eligible_real_operating_assets`; and
+- `total_assets`.
 
-- an active clause-verified policy;
-- a meaningful activity description and review rationale;
-- a public HTTPS primary-evidence URL;
-- every input used by a required ratio for the selected period;
-- valid decimal values and supported unit scales;
-- matching numerator and denominator currencies;
-- denominators greater than zero.
-
-A pending structured candidate is shown as a review opportunity, but it remains a blocker until an administrator accepts it. Optional ratio inputs may remain absent, but an optional ratio that has accepted conflicting or invalid evidence can still block a clean calculation.
-
-A `prohibited` activity review is ready to record a failed result without collecting irrelevant financial ratios because the screening engine stops at the activity gate. `pending` and `mixed` activity reviews are not ready to create an immutable result.
-
-The reporting-period selector uses the union of:
-
-- current accepted Sharia inputs;
-- structured XBRL candidates;
-- stored NSE integrated financial results.
-
-This prevents a newly observed company from defaulting to today's date when its actual financial period is already known.
+A repeated denominator is entered once and reused by the relevant ratios.
 
 ## Structured NSE XBRL candidates
 
-Migration `011_sharia_xbrl_candidates.sql` adds a review queue between official NSE XBRL evidence and accepted Sharia inputs. The five-minute NSE worker may create a `pending` candidate only when all of the following are true:
+Structured values are review candidates, never automatic religious conclusions.
 
-- the filing was processed successfully and retained in the private archive;
-- the reporting period and ISO currency are present;
-- the source fact uses the matching monetary unit;
-- the value fits exactly inside the configured decimal precision without rounding;
-- the fact mapping is explicitly supported.
+The conservative mapper supports only:
 
-The first supported mapping is deliberately narrow:
+- `Income` or `TotalIncome` → `total_income`, confidence 90%.
 
-- `Income` or `TotalIncome` → `total_revenue`, confidence 90%;
-- `RevenueFromOperations` → `total_revenue` fallback, confidence 75%, with mandatory other-income review.
+`RevenueFromOperations` is not re-labelled as consolidated total income because other income may be missing. Where no direct total-income fact exists, `total_income` remains missing until the administrator establishes the complete value from primary financial statements.
 
-The mapper does **not** reinterpret `OtherIncome` as impermissible income, `DebtEquityRatio` as interest-bearing debt, or any unrelated balance-sheet fact as an AAOIFI input. Missing evidence remains missing.
+The mapper does not reinterpret `OtherIncome` as impermissible income, `DebtEquityRatio` as interest-bearing debt, or unrelated balance-sheet facts as asset-substance inputs. Debt, deposits, impermissible income, eligible operating assets, total assets, and market capitalization remain missing until primary evidence is reviewed and accepted.
 
-An administrator may accept a pending candidate only when its metric key is required by the active policy. Acceptance supersedes the previous current input for the same company, period and metric, stores the XBRL item and fact provenance, and records the reviewer and time. Rejection also remains in the audit trail. The interface labels acceptance as `Policy required` while the policy gate is closed.
-
-For an existing installation, apply migration 011 before deploying the worker code. Then create candidates for already processed filings with:
+For existing processed filings, the idempotent backfill remains:
 
 ```sh
 php cron/backfill-sharia-candidates.php --limit=500
 ```
 
-The backfill is idempotent. Running it again does not duplicate the same item, metric, fact and context. A partial result exits non-zero and must be reviewed before treating the queue as complete.
-
 ## Compliance rank
 
-Rank 1–5 is a HalalPulse product indicator, not an AAOIFI rating. It is assigned only to a passing result. **Rank 1 is the cleanest passing result** and rank 5 is a passing result closest to one or more active-policy maxima. The rank reflects the worst utilization of any active-policy maximum:
+Rank 1–5 is a HalalPulse research indicator, not an AAOIFI rating.
 
-| Worst maximum utilization | HalalPulse rank |
+For a maximum threshold, utilization is `actual percentage ÷ maximum`. For a minimum threshold, risk utilization is `minimum ÷ actual percentage`. The worst passing utilization determines rank:
+
+| Worst threshold utilization | HalalPulse rank |
 |---:|---:|
 | up to 50% | 1 |
 | over 50%, up to 70% | 2 |
@@ -144,8 +167,18 @@ Rank 1–5 is a HalalPulse product indicator, not an AAOIFI rating. It is assign
 | over 85%, up to 95% | 4 |
 | over 95%, up to 100% | 5 |
 
-Failed and insufficient results have no rank. Investment/multibagger scoring remains a separate downstream layer and must not reinterpret a failed or insufficient Sharia result as eligible.
+Failed and insufficient results receive no rank. Multibagger scoring remains a separate downstream layer and cannot bypass the latest passing screening result.
 
-## Synthetic tests
+## Verification
 
-`tests/fixtures/sharia_policy.json` deliberately contains made-up thresholds and clause references and is labeled as a test-only policy. It verifies approval gating, official-source gating, clause provenance, missing-threshold rejection, exact boundary behavior, rank boundaries, unit normalization, missing evidence, currency mismatch, activity gating, primary-evidence validation, and the company readiness boundary. Its values are not religious guidance and must never be activated in production.
+Run all policy and release checks with:
+
+```sh
+php tests/sharia-policy-readiness.php
+php tests/sharia-research-policy.php
+php tests/sharia-evidence-readiness.php
+php tests/sharia-evidence-readiness-db.php
+php cron/verify-release.php
+```
+
+Synthetic fixtures contain made-up values solely to verify software boundaries. They are not religious guidance and must never be activated in production.

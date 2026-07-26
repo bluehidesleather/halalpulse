@@ -73,7 +73,7 @@ Page::begin(
     <div class="readiness-check-list">
         <article class="readiness-check">
             <span class="status status-manual_review">Screening</span>
-            <div><strong>Prepare the ignored AAOIFI policy working file</strong><p><span class="mono">/opt/alt/php83/usr/bin/php cron/prepare-sharia-policy.php</span><br>Complete it only from the exact official/licensed edition, run the readiness checker, obtain competent approval, and install only after a <span class="mono">[READY]</span> result.</p></div>
+            <div><strong>Activate the versioned research screen with explicit acknowledgement</strong><p><span class="mono">/opt/alt/php83/usr/bin/php cron/activate-research-sharia-policy.php --acknowledge-research-only</span><br>This activates research pass/fail screening, including the HalalPulse 30% minimum real operating-assets rule. It does not claim a fatwa or independent Sharia certification. The separate verified-policy workflow remains available for future qualified review.</p></div>
         </article>
         <article class="readiness-check">
             <span class="status status-manual_review">Ranking</span>

@@ -5,8 +5,10 @@
   "authority_standard": "Test fixture only",
   "authority_reference_url": "https://example.test/synthetic-policy",
   "effective_date": "2026-01-01",
+  "assurance_level": "independently_reviewed",
   "verified_by": "Automated test fixture",
   "verification_note": "Made-up thresholds and clause references used only to verify software boundary behavior.",
+  "disclaimer": "Synthetic automated test content only; it is not a fatwa, not religious guidance, and not financial advice.",
   "approved_for_use": true,
   "ratios": [
     {
@@ -14,6 +16,7 @@
       "label": "Synthetic debt ratio",
       "numerator_key": "test_debt",
       "denominator_key": "test_reference_value",
+      "comparison": "maximum",
       "max_percent": "40",
       "required": true,
       "source_clause": "Synthetic clause 1.1",
@@ -25,6 +28,7 @@
       "label": "Synthetic income ratio",
       "numerator_key": "test_flagged_income",
       "denominator_key": "test_total_revenue",
+      "comparison": "maximum",
       "max_percent": "10",
       "required": true,
       "source_clause": "Synthetic clause 1.2",

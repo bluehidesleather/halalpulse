@@ -54,6 +54,7 @@ $values = [
 $snapshot = [
     'active_admins' => 1,
     'sharia_policy_version' => 'verified-policy-v1',
+    'sharia_policy_assurance' => 'independently_reviewed',
     'methodology_version' => 'reviewed-methodology-v1',
     'pending_sharia_candidates' => 3,
     'activity_reviewed_companies' => 1,
@@ -92,11 +93,23 @@ try {
     $assert($complete['gates']['runtime'] && $complete['gates']['ingestion'], 'Runtime and ingestion gates are independently reported.');
     $assert($complete['warnings'] !== [], 'Disabled optional legacy coverage and pending review work remain visible as warnings.');
 
+    $research = $snapshot;
+    $research['sharia_policy_version'] = 'halalpulse-research-v1';
+    $research['sharia_policy_assurance'] = 'research';
+    $researchReport = $service->assess(new Config($values), $research, $backupStatus, $now);
+    $assert($researchReport['gates']['screening'] === true, 'An explicitly labelled research policy opens the deterministic screening gate.');
+    $assert(array_filter($researchReport['warnings'], static fn (string $warning): bool => str_contains($warning, 'research-only')) !== [], 'Operations keeps the active research-only assurance warning visible.');
+
     $noPolicy = $snapshot;
     $noPolicy['sharia_policy_version'] = null;
+    $noPolicy['sharia_policy_assurance'] = null;
     $policyReport = $service->assess(new Config($values), $noPolicy, $backupStatus, $now);
-    $assert($policyReport['gates']['screening'] === false, 'Screening is blocked without an active verified policy.');
+    $assert($policyReport['gates']['screening'] === false, 'Screening is blocked without an active policy.');
     $assert($policyReport['gates']['ranking'] === false, 'Ranking cannot bypass the Sharia policy gate.');
+
+    $unknownAssurance = $snapshot;
+    $unknownAssurance['sharia_policy_assurance'] = 'unclear';
+    $assert($service->assess(new Config($values), $unknownAssurance, $backupStatus, $now)['gates']['screening'] === false, 'An unknown policy assurance cannot open screening.');
 
     $staleFeed = $snapshot;
     $staleFeed['nse_integrated']['finished_at'] = '2026-07-21 12:00:00';
