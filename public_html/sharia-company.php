@@ -78,7 +78,7 @@ if (Request::isPost()) {
         } elseif ($action === 'save_input') {
             $policy = $app->sharia->activePolicy();
             if ($policy === null) {
-                throw new InvalidArgumentException('Activate a verified policy before entering policy inputs.');
+                throw new InvalidArgumentException('Activate a screening policy before entering policy inputs.');
             }
 
             $metricKey = Request::postString('metric_key');
@@ -111,7 +111,17 @@ if (Request::isPost()) {
                 throw new InvalidArgumentException('The selected source document does not belong to this company.');
             }
 
-            $app->sharia->saveFinancialInput($companyId, $period, $metricKey, $value, $currency, $scale, $documentId, $note, $user->id);
+            $app->sharia->saveFinancialInput(
+                $companyId,
+                $period,
+                $metricKey,
+                $value,
+                $currency,
+                $scale,
+                $documentId,
+                $note,
+                $user->id,
+            );
             $app->logger->info('Sharia financial evidence accepted.', [
                 'company_id' => $companyId,
                 'period_end' => $period,
@@ -133,7 +143,7 @@ if (Request::isPost()) {
                 throw new InvalidArgumentException('Screening is blocked: ' . (string) ($readiness['blockers'][0] ?? 'evidence is incomplete.'));
             }
             if ($policy === null) {
-                throw new InvalidArgumentException('No verified Sharia policy is active.');
+                throw new InvalidArgumentException('No screening policy is active.');
             }
 
             $result = (new ShariaScreeningEngine(new DecimalMath()))->screen(
@@ -147,9 +157,13 @@ if (Request::isPost()) {
                 'company_id' => $companyId,
                 'status' => $result->status,
                 'policy_id' => $policy->id,
+                'policy_assurance' => $policy->assuranceLevel,
                 'user_id' => $user->id,
             ]);
-            $app->session->flash($result->status === 'passed' ? 'success' : 'warning', 'Screening recorded as ' . $result->status . '.');
+            $app->session->flash(
+                $result->status === 'passed' ? 'success' : 'warning',
+                'Screening recorded as ' . $policy->statusLabel($result->status) . '.',
+            );
         } else {
             throw new InvalidArgumentException('Invalid Sharia review action.');
         }
@@ -181,12 +195,11 @@ $inputs = $app->sharia->inputsForPeriod($companyId, $selectedPeriod);
 $pendingCandidates = $readinessRepository->pendingCandidatesForPeriod($companyId, $selectedPeriod);
 $readiness = $readinessService->assess($policy, $activity, $inputs, $pendingCandidates);
 $acceptedKeyLookup = array_fill_keys($readiness['accepted_input_keys'], true);
-$missingKeyLookup = array_fill_keys($readiness['missing_input_keys'], true);
 $candidateKeyLookup = array_fill_keys($readiness['pending_candidate_keys'], true);
 $history = $app->sharia->screeningHistory($companyId);
 
 Page::begin(
-    (string) $company['symbol'] . ' Sharia review',
+    (string) $company['symbol'] . ' Sharia research review',
     (string) $config->get('app.name', 'HalalPulse'),
     $user,
     'sharia',
@@ -194,16 +207,37 @@ Page::begin(
 );
 ?>
 <div class="page-heading">
-    <div><p class="eyebrow"><?= Page::escape($company['exchange']) ?> · <?= Page::escape($company['symbol']) ?></p><h1><?= Page::escape($company['company_name']) ?></h1><p class="muted">Every review, evidence value, policy version, and screening result is retained for audit.</p></div>
+    <div>
+        <p class="eyebrow"><?= Page::escape($company['exchange']) ?> · <?= Page::escape($company['symbol']) ?></p>
+        <h1><?= Page::escape($company['company_name']) ?></h1>
+        <p class="muted">Every activity review, financial input, policy version, assurance boundary, and screening result is retained for audit.</p>
+    </div>
     <a class="button button-secondary" href="/sharia.php">Back to queue</a>
 </div>
 
 <?php Page::flash($app->session->consumeFlash()); ?>
 
 <?php if ($policy === null): ?>
-    <section class="notice-card notice-error policy-gate"><strong>Policy gate closed</strong><p>You may record an activity review, but financial policy inputs and screening remain unavailable until a verified policy is installed.</p></section>
+    <section class="notice-card notice-error policy-gate">
+        <strong>Policy gate closed</strong>
+        <p>You may record an activity review, but financial inputs and screening remain unavailable until a research or independently reviewed policy is active.</p>
+    </section>
 <?php else: ?>
-    <section class="policy-banner compact-policy"><div><p class="eyebrow">Active policy</p><h2><?= Page::escape($policy->name) ?></h2><p><?= Page::escape($policy->version) ?> · <?= Page::escape($policy->authorityStandard) ?> · <?= Page::escape(count($policy->ratios)) ?> ratios</p></div><span class="mono">SHA <?= Page::escape(substr($policy->policyHash, 0, 12)) ?>…</span></section>
+    <section class="policy-banner compact-policy">
+        <div>
+            <p class="eyebrow"><?= $policy->isResearch() ? 'Active research policy' : 'Active independently reviewed policy' ?></p>
+            <h2><?= Page::escape($policy->name) ?></h2>
+            <p><?= Page::escape($policy->version) ?> · <?= Page::escape($policy->authorityStandard) ?> · <?= Page::escape(count($policy->ratios)) ?> ratios</p>
+        </div>
+        <span class="mono">SHA <?= Page::escape(substr($policy->policyHash, 0, 12)) ?>…</span>
+    </section>
+    <section class="notice-card">
+        <strong><?= $policy->isResearch() ? 'Research assurance boundary' : 'Policy assurance' ?></strong>
+        <p><?= Page::escape($policy->disclaimer) ?></p>
+        <?php if ($policy->isResearch()): ?>
+            <p><strong>HalalPulse strict overlay:</strong> eligible real operating assets must be at least 30% of consolidated total assets. This is an owner-defined investor-protection rule, not an AAOIFI certification claim.</p>
+        <?php endif; ?>
+    </section>
 <?php endif; ?>
 
 <section class="panel readiness-panel">
@@ -223,12 +257,17 @@ Page::begin(
     <?php if ($readiness['warnings'] !== []): ?>
         <div class="notice-card"><strong>Review opportunities</strong><ul class="reason-list"><?php foreach ($readiness['warnings'] as $warning): ?><li><?= Page::escape($warning) ?></li><?php endforeach; ?></ul></div>
     <?php endif; ?>
-    <?php if ($pendingCandidates !== []): ?><p class="readiness-link"><a href="/sharia-candidates.php?id=<?= Page::escape($companyId) ?>">Review <?= Page::escape(count($pendingCandidates)) ?> structured candidate<?= count($pendingCandidates) === 1 ? '' : 's' ?> for this company</a></p><?php endif; ?>
+    <?php if ($pendingCandidates !== []): ?>
+        <p class="readiness-link"><a href="/sharia-candidates.php?id=<?= Page::escape($companyId) ?>">Review <?= Page::escape(count($pendingCandidates)) ?> structured candidate<?= count($pendingCandidates) === 1 ? '' : 's' ?> for this company</a></p>
+    <?php endif; ?>
 </section>
 
 <section class="review-grid">
     <article class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">Human gate</p><h2>Business activity</h2></div><?php if ($activity !== null): ?><span class="status status-<?= Page::escape($activity['activity_status']) ?>"><?= Page::escape(ucfirst((string) $activity['activity_status'])) ?></span><?php endif; ?></div>
+        <div class="panel-heading">
+            <div><p class="eyebrow">Human gate</p><h2>Business activity</h2></div>
+            <?php if ($activity !== null): ?><span class="status status-<?= Page::escape($activity['activity_status']) ?>"><?= Page::escape(ucfirst((string) $activity['activity_status'])) ?></span><?php endif; ?>
+        </div>
         <?php if ($activity !== null): ?>
             <p class="review-note"><?= Page::escape($activity['activity_description']) ?></p>
             <?php if ($activity['evidence_source_url'] !== null): ?><p><a href="<?= Page::escape($activity['evidence_source_url']) ?>" target="_blank" rel="noopener noreferrer">Open primary evidence</a></p><?php endif; ?>
@@ -240,7 +279,9 @@ Page::begin(
             <input type="hidden" name="action" value="save_activity">
             <label for="activity_status">Classification</label>
             <select id="activity_status" name="activity_status" required>
-                <?php foreach (['pending', 'permissible', 'prohibited', 'mixed'] as $status): ?><option value="<?= Page::escape($status) ?>" <?= ($activity['activity_status'] ?? 'pending') === $status ? 'selected' : '' ?>><?= Page::escape(ucfirst($status)) ?></option><?php endforeach; ?>
+                <?php foreach (['pending', 'permissible', 'prohibited', 'mixed'] as $status): ?>
+                    <option value="<?= Page::escape($status) ?>" <?= ($activity['activity_status'] ?? 'pending') === $status ? 'selected' : '' ?>><?= Page::escape(ucfirst($status)) ?></option>
+                <?php endforeach; ?>
             </select>
             <label for="activity_description">What the company does</label>
             <textarea id="activity_description" name="activity_description" minlength="20" maxlength="1000" required><?= Page::escape($activity['activity_description'] ?? '') ?></textarea>
@@ -258,17 +299,30 @@ Page::begin(
     <article class="panel">
         <div class="panel-heading"><div><p class="eyebrow">Accepted evidence</p><h2>Financial policy input</h2></div><span class="status"><?= Page::escape($selectedPeriod) ?></span></div>
         <?php if ($policy === null): ?>
-            <div class="empty-state compact"><p>Activate a verified policy to reveal its required input keys.</p></div>
+            <div class="empty-state compact"><p>Activate a screening policy to reveal its required input keys.</p></div>
         <?php else: ?>
             <form class="stacked-form form-section" method="post">
                 <input type="hidden" name="csrf_token" value="<?= Page::escape($app->session->csrfToken()) ?>">
                 <input type="hidden" name="company_id" value="<?= Page::escape($companyId) ?>">
                 <input type="hidden" name="action" value="save_input">
-                <label for="period_end">Evidence period end</label><input id="period_end" name="period_end" type="date" value="<?= Page::escape($selectedPeriod) ?>" required>
-                <label for="metric_key">Policy input</label><select id="metric_key" name="metric_key" required><?php foreach ($policy->inputKeys() as $key): ?><option value="<?= Page::escape($key) ?>"><?= Page::escape(str_replace('_', ' ', ucfirst($key))) ?></option><?php endforeach; ?></select>
-                <div class="form-row"><div><label for="value">Value</label><input id="value" name="value" inputmode="decimal" placeholder="0.000000" required></div><div><label for="currency">Currency</label><input id="currency" name="currency" value="INR" maxlength="3" required></div><div><label for="scale_label">Scale</label><select id="scale_label" name="scale_label"><?php foreach (['one', 'thousand', 'lakh', 'million', 'crore'] as $scale): ?><option value="<?= Page::escape($scale) ?>"><?= Page::escape(ucfirst($scale)) ?></option><?php endforeach; ?></select></div></div>
-                <label for="source_document_id">Stored filing document (optional)</label><select id="source_document_id" name="source_document_id"><option value="">No linked PDF</option><?php foreach ($documents as $document): ?><option value="<?= Page::escape($document['id']) ?>">#<?= Page::escape($document['id']) ?> · <?= Page::escape($document['announced_at']) ?> · <?= Page::escape($document['subject']) ?></option><?php endforeach; ?></select>
-                <label for="input_evidence_note">Where this value appears</label><textarea id="input_evidence_note" name="input_evidence_note" minlength="20" maxlength="1000" required></textarea>
+                <label for="period_end">Evidence period end</label>
+                <input id="period_end" name="period_end" type="date" value="<?= Page::escape($selectedPeriod) ?>" required>
+                <label for="metric_key">Policy input</label>
+                <select id="metric_key" name="metric_key" required>
+                    <?php foreach ($policy->inputKeys() as $key): ?><option value="<?= Page::escape($key) ?>"><?= Page::escape(str_replace('_', ' ', ucfirst($key))) ?></option><?php endforeach; ?>
+                </select>
+                <div class="form-row">
+                    <div><label for="value">Value</label><input id="value" name="value" inputmode="decimal" placeholder="0.000000" required></div>
+                    <div><label for="currency">Currency</label><input id="currency" name="currency" value="INR" maxlength="3" required></div>
+                    <div><label for="scale_label">Scale</label><select id="scale_label" name="scale_label"><?php foreach (['one', 'thousand', 'lakh', 'million', 'crore'] as $scale): ?><option value="<?= Page::escape($scale) ?>"><?= Page::escape(ucfirst($scale)) ?></option><?php endforeach; ?></select></div>
+                </div>
+                <label for="source_document_id">Stored filing document (optional)</label>
+                <select id="source_document_id" name="source_document_id">
+                    <option value="">No linked PDF</option>
+                    <?php foreach ($documents as $document): ?><option value="<?= Page::escape($document['id']) ?>">#<?= Page::escape($document['id']) ?> · <?= Page::escape($document['announced_at']) ?> · <?= Page::escape($document['subject']) ?></option><?php endforeach; ?>
+                </select>
+                <label for="input_evidence_note">Where this value appears</label>
+                <textarea id="input_evidence_note" name="input_evidence_note" minlength="20" maxlength="1000" required></textarea>
                 <button class="button button-primary" type="submit">Accept evidence value</button>
             </form>
         <?php endif; ?>
@@ -276,20 +330,60 @@ Page::begin(
 </section>
 
 <section class="panel panel-results">
-    <div class="panel-heading"><div><p class="eyebrow">Current evidence set</p><h2>Inputs for period</h2></div><form class="period-picker" method="get"><input type="hidden" name="id" value="<?= Page::escape($companyId) ?>"><label for="period">Period</label><input id="period" name="period" type="date" value="<?= Page::escape($selectedPeriod) ?>"><button class="button button-secondary button-small" type="submit">Load</button></form></div>
+    <div class="panel-heading">
+        <div><p class="eyebrow">Current evidence set</p><h2>Inputs for period</h2></div>
+        <form class="period-picker" method="get">
+            <input type="hidden" name="id" value="<?= Page::escape($companyId) ?>">
+            <label for="period">Period</label>
+            <input id="period" name="period" type="date" value="<?= Page::escape($selectedPeriod) ?>">
+            <button class="button button-secondary button-small" type="submit">Load</button>
+        </form>
+    </div>
     <?php if ($policy !== null && $readiness['required_input_keys'] !== []): ?>
-        <div class="table-wrap readiness-table"><table><thead><tr><th>Required input</th><th>State</th><th>Next action</th></tr></thead><tbody>
-        <?php foreach ($readiness['required_input_keys'] as $key): ?>
-            <tr><td><strong><?= Page::escape(str_replace('_', ' ', ucfirst($key))) ?></strong></td><td><?php if (isset($acceptedKeyLookup[$key])): ?><span class="status status-accepted">Accepted</span><?php elseif (isset($candidateKeyLookup[$key])): ?><span class="status status-manual_review">Candidate pending</span><?php else: ?><span class="status status-failed">Missing</span><?php endif; ?></td><td><?php if (isset($acceptedKeyLookup[$key])): ?>No action required<?php elseif (isset($candidateKeyLookup[$key])): ?><a href="/sharia-candidates.php?id=<?= Page::escape($companyId) ?>">Review structured evidence</a><?php else: ?>Collect primary financial evidence<?php endif; ?></td></tr>
-        <?php endforeach; ?>
-        </tbody></table></div>
+        <div class="table-wrap readiness-table">
+            <table>
+                <thead><tr><th>Required input</th><th>State</th><th>Next action</th></tr></thead>
+                <tbody>
+                <?php foreach ($readiness['required_input_keys'] as $key): ?>
+                    <tr>
+                        <td><strong><?= Page::escape(str_replace('_', ' ', ucfirst($key))) ?></strong></td>
+                        <td><?php if (isset($acceptedKeyLookup[$key])): ?><span class="status status-accepted">Accepted</span><?php elseif (isset($candidateKeyLookup[$key])): ?><span class="status status-manual_review">Candidate pending</span><?php else: ?><span class="status status-failed">Missing</span><?php endif; ?></td>
+                        <td><?php if (isset($acceptedKeyLookup[$key])): ?>No action required<?php elseif (isset($candidateKeyLookup[$key])): ?><a href="/sharia-candidates.php?id=<?= Page::escape($companyId) ?>">Review structured evidence</a><?php else: ?>Collect primary financial evidence<?php endif; ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endif; ?>
     <?php if ($inputs === []): ?>
         <div class="empty-state compact"><p>No accepted policy inputs for this period.</p></div>
     <?php else: ?>
-        <div class="table-wrap"><table><thead><tr><th>Input</th><th>Value</th><th>Evidence</th><th>Accepted</th></tr></thead><tbody><?php foreach ($inputs as $key => $input): ?><tr><td><strong><?= Page::escape(str_replace('_', ' ', ucfirst($key))) ?></strong></td><td><?= Page::escape($input['currency']) ?> <?= Page::escape($input['value']) ?><small><?= Page::escape($input['scale_label']) ?></small></td><td><?= Page::escape($input['evidence_note']) ?><?php if ($input['source_document_id'] !== null): ?><small><a href="/document.php?id=<?= Page::escape($input['source_document_id']) ?>">Stored PDF #<?= Page::escape($input['source_document_id']) ?></a></small><?php elseif (($input['source_fact_name'] ?? null) !== null): ?><small>Structured XBRL fact <?= Page::escape($input['source_fact_name']) ?></small><?php endif; ?></td><td><?= Page::escape($input['accepted_by_name']) ?><small><?= Page::escape($input['accepted_at']) ?></small></td></tr><?php endforeach; ?></tbody></table></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Input</th><th>Value</th><th>Evidence</th><th>Accepted</th></tr></thead>
+                <tbody>
+                <?php foreach ($inputs as $key => $input): ?>
+                    <tr>
+                        <td><strong><?= Page::escape(str_replace('_', ' ', ucfirst($key))) ?></strong></td>
+                        <td><?= Page::escape($input['currency']) ?> <?= Page::escape($input['value']) ?><small><?= Page::escape($input['scale_label']) ?></small></td>
+                        <td><?= Page::escape($input['evidence_note']) ?><?php if ($input['source_document_id'] !== null): ?><small><a href="/document.php?id=<?= Page::escape($input['source_document_id']) ?>">Stored PDF #<?= Page::escape($input['source_document_id']) ?></a></small><?php elseif (($input['source_fact_name'] ?? null) !== null): ?><small>Structured XBRL fact <?= Page::escape($input['source_fact_name']) ?></small><?php endif; ?></td>
+                        <td><?= Page::escape($input['accepted_by_name']) ?><small><?= Page::escape($input['accepted_at']) ?></small></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endif; ?>
-    <?php if ($policy !== null): ?><form class="screening-action" method="post"><input type="hidden" name="csrf_token" value="<?= Page::escape($app->session->csrfToken()) ?>"><input type="hidden" name="company_id" value="<?= Page::escape($companyId) ?>"><input type="hidden" name="period_end" value="<?= Page::escape($selectedPeriod) ?>"><input type="hidden" name="action" value="run_screening"><p><?= $readiness['ready'] ? 'Stores an immutable result snapshot under policy ' . Page::escape($policy->version) . '.' : 'Resolve every blocking item before recording an immutable screening.' ?></p><button class="button button-primary" type="submit" <?= $readiness['ready'] ? '' : 'disabled title="Evidence readiness blockers remain."' ?>><?= $readiness['ready'] ? 'Run screening' : 'Resolve blockers' ?></button></form><?php endif; ?>
+    <?php if ($policy !== null): ?>
+        <form class="screening-action" method="post">
+            <input type="hidden" name="csrf_token" value="<?= Page::escape($app->session->csrfToken()) ?>">
+            <input type="hidden" name="company_id" value="<?= Page::escape($companyId) ?>">
+            <input type="hidden" name="period_end" value="<?= Page::escape($selectedPeriod) ?>">
+            <input type="hidden" name="action" value="run_screening">
+            <p><?= $readiness['ready'] ? 'Stores an immutable ' . ($policy->isResearch() ? 'research result' : 'screening result') . ' under policy ' . Page::escape($policy->version) . '.' : 'Resolve every blocking item before recording an immutable screening.' ?></p>
+            <button class="button button-primary" type="submit" <?= $readiness['ready'] ? '' : 'disabled title="Evidence readiness blockers remain."' ?>><?= $readiness['ready'] ? ($policy->isResearch() ? 'Run research screening' : 'Run screening') : 'Resolve blockers' ?></button>
+        </form>
+    <?php endif; ?>
 </section>
 
 <section class="panel panel-results">
@@ -297,12 +391,30 @@ Page::begin(
     <?php if ($history === []): ?>
         <div class="empty-state compact"><p>No screenings recorded yet.</p></div>
     <?php else: ?>
-        <div class="table-wrap"><table><thead><tr><th>Result</th><th>Period</th><th>Policy</th><th>Reasons</th><th>Recorded</th></tr></thead><tbody>
-        <?php foreach ($history as $screening): ?>
-            <?php $reasons = json_decode((string) $screening['reasons'], true); $reasons = is_array($reasons) ? $reasons : []; ?>
-            <tr><td><span class="status status-<?= Page::escape($screening['status']) ?>"><?= Page::escape(ucfirst((string) $screening['status'])) ?></span><small><?= $screening['compliance_rank'] === null ? 'No rank' : 'HalalPulse rank ' . Page::escape($screening['compliance_rank']) . ' / 5' ?></small></td><td><?= Page::escape($screening['period_end']) ?></td><td><?= Page::escape($screening['policy_version']) ?><small><?= Page::escape($screening['policy_name']) ?></small></td><td><ul class="reason-list"><?php foreach ($reasons as $reason): ?><li><?= Page::escape((string) $reason) ?></li><?php endforeach; ?></ul></td><td><?= Page::escape($screening['computed_by_name']) ?><small><?= Page::escape($screening['computed_at']) ?></small></td></tr>
-        <?php endforeach; ?>
-        </tbody></table></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Result</th><th>Period</th><th>Policy</th><th>Reasons</th><th>Recorded</th></tr></thead>
+                <tbody>
+                <?php foreach ($history as $screening): ?>
+                    <?php
+                    $reasons = json_decode((string) $screening['reasons'], true);
+                    $reasons = is_array($reasons) ? $reasons : [];
+                    $historyStatus = (string) $screening['status'];
+                    $historyLabel = $policy !== null && (int) $screening['policy_id'] === $policy->id
+                        ? $policy->statusLabel($historyStatus)
+                        : ucfirst(str_replace('_', ' ', $historyStatus));
+                    ?>
+                    <tr>
+                        <td><span class="status status-<?= Page::escape($historyStatus) ?>"><?= Page::escape($historyLabel) ?></span><small><?= $screening['compliance_rank'] === null ? 'No rank' : 'HalalPulse rank ' . Page::escape($screening['compliance_rank']) . ' / 5' ?></small></td>
+                        <td><?= Page::escape($screening['period_end']) ?></td>
+                        <td><?= Page::escape($screening['policy_version']) ?><small><?= Page::escape($screening['policy_name']) ?></small></td>
+                        <td><ul class="reason-list"><?php foreach ($reasons as $reason): ?><li><?= Page::escape((string) $reason) ?></li><?php endforeach; ?></ul></td>
+                        <td><?= Page::escape($screening['computed_by_name']) ?><small><?= Page::escape($screening['computed_at']) ?></small></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endif; ?>
 </section>
 <?php Page::end(); ?>
