@@ -76,9 +76,14 @@ final readonly class ShariaScreeningEngine
             }
 
             $percentage = $this->math->percent($numeratorBase, $denominatorBase);
-            $passed = $this->math->compare($percentage, $ratio['max_percent']) <= 0;
-            $utilization = $this->math->utilization($percentage, $ratio['max_percent']);
-            if ($this->math->compare($utilization, $worstUtilization) > 0) {
+            $comparison = (string) $ratio['comparison'];
+            $passed = $comparison === 'minimum'
+                ? $this->math->compare($percentage, $ratio['max_percent']) >= 0
+                : $this->math->compare($percentage, $ratio['max_percent']) <= 0;
+            $utilization = $comparison === 'minimum'
+                ? $this->math->utilization($ratio['max_percent'], $percentage)
+                : $this->math->utilization($percentage, $ratio['max_percent']);
+            if ($passed && $this->math->compare($utilization, $worstUtilization) > 0) {
                 $worstUtilization = $utilization;
             }
 
@@ -86,6 +91,8 @@ final readonly class ShariaScreeningEngine
                 'key' => $ratio['key'],
                 'label' => $ratio['label'],
                 'percentage' => $this->math->normalize($percentage),
+                'comparison' => $comparison,
+                'threshold_percent' => $ratio['max_percent'],
                 'max_percent' => $ratio['max_percent'],
                 'currency' => $numerator->currency,
                 'passed' => $passed,
@@ -93,7 +100,9 @@ final readonly class ShariaScreeningEngine
 
             if (!$passed) {
                 $failed = true;
-                $reasons[] = "{$ratio['label']} exceeds the active policy maximum.";
+                $reasons[] = $comparison === 'minimum'
+                    ? "{$ratio['label']} is below the active policy minimum."
+                    : "{$ratio['label']} exceeds the active policy maximum.";
             }
         }
 
@@ -124,7 +133,9 @@ final readonly class ShariaScreeningEngine
             complianceRank: $this->rank($worstUtilization),
             activityStatus: $activityStatus,
             ratioResults: $ratioResults,
-            reasons: ['All required ratios are within the active policy maxima.'],
+            reasons: [$policy->isResearch()
+                ? 'All required research-policy thresholds are satisfied; this is not independent Sharia certification.'
+                : 'All required ratios are within the active independently reviewed policy thresholds.'],
             inputSnapshot: $inputSnapshot,
         );
     }
