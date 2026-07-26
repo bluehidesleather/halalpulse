@@ -139,10 +139,11 @@ A repeated denominator is entered once and reused by the relevant ratios.
 
 Structured values are review candidates, never automatic religious conclusions.
 
-The conservative mapper currently supports:
+The conservative mapper supports only:
 
-- `Income` or `TotalIncome` → `total_income`, confidence 90%;
-- `RevenueFromOperations` → provisional `total_income`, confidence 60%, with mandatory review and addition of other income before acceptance when applicable.
+- `Income` or `TotalIncome` → `total_income`, confidence 90%.
+
+`RevenueFromOperations` is not re-labelled as consolidated total income because other income may be missing. Where no direct total-income fact exists, `total_income` remains missing until the administrator establishes the complete value from primary financial statements.
 
 The mapper does not reinterpret `OtherIncome` as impermissible income, `DebtEquityRatio` as interest-bearing debt, or unrelated balance-sheet facts as asset-substance inputs. Debt, deposits, impermissible income, eligible operating assets, total assets, and market capitalization remain missing until primary evidence is reviewed and accepted.
 
