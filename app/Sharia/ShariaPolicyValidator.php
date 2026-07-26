@@ -17,14 +17,17 @@ final class ShariaPolicyValidator
      *   authority_standard: string,
      *   authority_reference_url: string,
      *   effective_date: string,
+     *   assurance_level: string,
      *   verified_by: string,
      *   verification_note: string,
+     *   disclaimer: string,
      *   approved_for_use: bool,
      *   ratios: list<array{
      *     key: string,
      *     label: string,
      *     numerator_key: string,
      *     denominator_key: string,
+     *     comparison: string,
      *     max_percent: string,
      *     required: bool,
      *     source_clause: string,
@@ -46,8 +49,10 @@ final class ShariaPolicyValidator
         $authorityStandard = $this->requiredText($input, 'authority_standard', 100);
         $referenceUrl = $this->requiredText($input, 'authority_reference_url', 500);
         $effectiveDate = $this->requiredText($input, 'effective_date', 10);
+        $assuranceLevel = $this->requiredText($input, 'assurance_level', 32);
         $verifiedBy = $this->requiredText($input, 'verified_by', 191);
         $verificationNote = $this->requiredText($input, 'verification_note', 1000);
+        $disclaimer = $this->requiredText($input, 'disclaimer', 1000);
         $approved = ($input['approved_for_use'] ?? null) === true;
 
         /** @var list<array<string, mixed>> $ratioInput */
@@ -60,6 +65,7 @@ final class ShariaPolicyValidator
                 'label' => $this->ratioText($ratio, 'label', $index, 191),
                 'numerator_key' => $this->ratioKey($ratio, 'numerator_key', $index),
                 'denominator_key' => $this->ratioKey($ratio, 'denominator_key', $index),
+                'comparison' => $this->ratioText($ratio, 'comparison', $index, 16),
                 'max_percent' => (string) $ratio['max_percent'],
                 'required' => (bool) $ratio['required'],
                 'source_clause' => $this->ratioText($ratio, 'source_clause', $index, 191),
@@ -79,8 +85,10 @@ final class ShariaPolicyValidator
             'authority_standard' => $authorityStandard,
             'authority_reference_url' => $referenceUrl,
             'effective_date' => $effectiveDate,
+            'assurance_level' => $assuranceLevel,
             'verified_by' => $verifiedBy,
             'verification_note' => $verificationNote,
+            'disclaimer' => $disclaimer,
             'approved_for_use' => $approved,
             'ratios' => $ratios,
         ];
@@ -91,6 +99,36 @@ final class ShariaPolicyValidator
     {
         $validated = $this->validate($input);
         $json = json_encode($validated, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
+        return hash('sha256', $json);
+    }
+
+    /**
+     * Verify policy rows created before assurance metadata and threshold directions were introduced.
+     *
+     * @param array<string, mixed> $input
+     */
+    public function legacyHash(array $input): string
+    {
+        $validated = $this->validate($input);
+        $legacyRatios = [];
+        foreach ($validated['ratios'] as $ratio) {
+            unset($ratio['comparison']);
+            $legacyRatios[] = $ratio;
+        }
+        $legacy = [
+            'version' => $validated['version'],
+            'name' => $validated['name'],
+            'authority_name' => $validated['authority_name'],
+            'authority_standard' => $validated['authority_standard'],
+            'authority_reference_url' => $validated['authority_reference_url'],
+            'effective_date' => $validated['effective_date'],
+            'verified_by' => $validated['verified_by'],
+            'verification_note' => $validated['verification_note'],
+            'approved_for_use' => $validated['approved_for_use'],
+            'ratios' => $legacyRatios,
+        ];
+        $json = json_encode($legacy, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         return hash('sha256', $json);
     }
