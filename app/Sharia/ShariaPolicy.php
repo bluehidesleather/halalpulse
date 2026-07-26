@@ -30,13 +30,13 @@ final readonly class ShariaPolicy
         public string $authorityStandard,
         public string $authorityReferenceUrl,
         public string $effectiveDate,
-        public string $assuranceLevel,
         public string $verifiedBy,
         public string $verificationNote,
-        public string $disclaimer,
         public string $policyHash,
         public bool $isActive,
         public array $ratios,
+        public string $assuranceLevel = 'independently_reviewed',
+        public string $disclaimer = 'This policy is a research aid, not a fatwa, and not financial advice.',
     ) {
     }
 
@@ -102,13 +102,13 @@ final readonly class ShariaPolicy
             authorityStandard: $validated['authority_standard'],
             authorityReferenceUrl: $validated['authority_reference_url'],
             effectiveDate: $validated['effective_date'],
-            assuranceLevel: $validated['assurance_level'],
             verifiedBy: $validated['verified_by'],
             verificationNote: $validated['verification_note'],
-            disclaimer: $validated['disclaimer'],
             policyHash: $storedHash,
             isActive: (int) $row['is_active'] === 1,
             ratios: $validated['ratios'],
+            assuranceLevel: $validated['assurance_level'],
+            disclaimer: $validated['disclaimer'],
         );
     }
 
