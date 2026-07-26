@@ -20,6 +20,10 @@ final readonly class OperationsReadinessRepository
             SELECT
                 (SELECT COUNT(*) FROM users WHERE role='admin' AND is_active=1) AS active_admins,
                 (SELECT version FROM sharia_policies WHERE is_active=1 ORDER BY activated_at DESC,id DESC LIMIT 1) AS sharia_policy_version,
+                (SELECT CASE
+                    WHEN JSON_TYPE(ratios_json)='OBJECT' THEN JSON_UNQUOTE(JSON_EXTRACT(ratios_json,'$.assurance_level'))
+                    ELSE 'independently_reviewed'
+                END FROM sharia_policies WHERE is_active=1 ORDER BY activated_at DESC,id DESC LIMIT 1) AS sharia_policy_assurance,
                 (SELECT version FROM multibagger_methodologies WHERE is_active=1 ORDER BY activated_at DESC,id DESC LIMIT 1) AS methodology_version,
                 (SELECT COUNT(*) FROM sharia_input_candidates WHERE review_status='pending') AS pending_sharia_candidates,
                 (SELECT COUNT(DISTINCT company_id) FROM company_sharia_activity_reviews) AS activity_reviewed_companies,
@@ -71,6 +75,7 @@ final readonly class OperationsReadinessRepository
         return [
             'active_admins' => (int) ($summary['active_admins'] ?? 0),
             'sharia_policy_version' => isset($summary['sharia_policy_version']) ? (string) $summary['sharia_policy_version'] : null,
+            'sharia_policy_assurance' => isset($summary['sharia_policy_assurance']) ? (string) $summary['sharia_policy_assurance'] : null,
             'methodology_version' => isset($summary['methodology_version']) ? (string) $summary['methodology_version'] : null,
             'pending_sharia_candidates' => (int) ($summary['pending_sharia_candidates'] ?? 0),
             'activity_reviewed_companies' => (int) ($summary['activity_reviewed_companies'] ?? 0),
