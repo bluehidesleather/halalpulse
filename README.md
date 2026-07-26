@@ -33,7 +33,8 @@ Milestone 22 adds an operational research-screening path without weakening the i
 - research-only result labels and operational warnings;
 - backward compatibility for previously stored policy hashes;
 - direct NSE total-income evidence mapped to the exact `total_income` denominator, with revenue-only filings left incomplete;
-- dedicated policy, asset-substance, compatibility, MySQL integration, and release checks;
+- an idempotent compatibility command that converts genuine legacy Income/TotalIncome candidates and retires revenue-only fallbacks without deleting audit rows;
+- dedicated policy, asset-substance, candidate-migration, compatibility, MySQL integration, and release checks;
 - encrypted streaming backups covering MySQL, private configuration, filing documents, and XBRL archives;
 - authenticated backup verification and isolated extraction;
 - an authenticated Operations page reporting runtime, source, policy, methodology, backup, and alert readiness;
@@ -68,17 +69,20 @@ tests/               Dependency-free test harness
 4. Put real database credentials only in `config/config.local.php`.
 5. Run `php cron/generate-app-key.php` and copy its output into `security.app_key`. Never commit that value.
 6. Run `php cron/create-admin.php you@example.com "Your Name"` and enter a unique password interactively.
-7. Activate the tracked research-only Sharia policy only after reading its disclaimer:
+7. On installations that ingested candidates before the exact `total_income` key was introduced, normalize legacy candidate rows, then activate the tracked research-only policy after reading its disclaimer:
 
 ```sh
+php cron/migrate-sharia-total-income-candidates.php
 php cron/activate-research-sharia-policy.php --acknowledge-research-only
 ```
+
+The normalization command is idempotent. Direct `Income` and `TotalIncome` candidates move to `total_income`; revenue-only fallbacks are retained as rejected audit records. The command blocks activation when a current accepted `total_revenue` input requires manual replacement.
 
 8. For a future independently reviewed policy, copy `config/sharia-policy.example.json` to ignored `config/sharia-policy.local.json`, complete it from the exact official/licensed edition, obtain competent review, run `php cron/check-sharia-policy.php`, and install only after `[READY]`.
 9. Copy `config/multibagger-methodology.example.json` to ignored `config/multibagger-methodology.local.json` and independently review every factor, evidence requirement, grade anchor, weight, valuation assumption, market-cap band, and microcap adjustment.
 10. Run `php cron/check-multibagger-methodology.php config/multibagger-methodology.local.json`. It makes no database changes and must report `[READY]` before activation.
 11. Activate the approved methodology with `php cron/install-multibagger-methodology.php config/multibagger-methodology.local.json`.
-12. Apply migrations `006_government_tailwinds.sql`, `007_alert_delivery.sql`, `008_telegram_alerts.sql`, `009_nse_integrated_rss.sql`, `010_nse_activity_exclusions.sql`, `011_sharia_xbrl_candidates.sql`, and `012_user_auth_version.sql` in order on an existing installation. No new migration is required for the research-policy assurance metadata.
+12. Apply migrations `006_government_tailwinds.sql`, `007_alert_delivery.sql`, `008_telegram_alerts.sql`, `009_nse_integrated_rss.sql`, `010_nse_activity_exclusions.sql`, `011_sharia_xbrl_candidates.sql`, and `012_user_auth_version.sql` in order on an existing installation. No new schema migration is required for the research-policy assurance metadata or candidate normalization.
 13. Configure `backups` privately, then run `php cron/create-backup.php` and `php cron/check-backups.php --decrypt`.
 14. Run `php cron/verify-release.php` for all dependency-free suites and deployment health checks.
 15. Point the permanent HTTPS domain document root at this project's `public_html` directory and sign in.
