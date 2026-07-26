@@ -1,0 +1,198 @@
+name: HalalPulse Sharia Candidate Migration
+
+"on":
+  pull_request:
+  push:
+    branches:
+      - "main"
+      - "agent/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: halalpulse-sharia-candidate-migration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Legacy total-income candidate migration
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: halalpulse_test
+          MYSQL_USER: halalpulse
+          MYSQL_PASSWORD: halalpulse_ci
+          MYSQL_ROOT_PASSWORD: root_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot_ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_mysql, json, mbstring
+          coverage: none
+
+      - name: Lint migration files
+        run: |
+          php -l app/Sharia/LegacyShariaCandidateMigrator.php
+          php -l cron/migrate-sharia-total-income-candidates.php
+          php -l tests/sharia-candidate-migration-db.php
+
+      - name: Import schema and production migrations
+        env:
+          MYSQL_PWD: halalpulse_ci
+        run: |
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test < database/schema.sql
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test < database/migrations/010_nse_activity_exclusions.sql
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test < database/migrations/011_sharia_xbrl_candidates.sql
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test < database/migrations/012_user_auth_version.sql
+
+      - name: Create isolated CI configuration
+        run: |
+          mkdir -p storage/logs storage/documents storage/xbrl storage/backups
+          php -r '
+            $config = require "config/config.example.php";
+            $config["app"]["environment"] = "testing";
+            $config["app"]["log_path"] = getcwd() . "/storage/logs/halalpulse.jsonl";
+            $config["security"]["app_key"] = str_repeat("c", 64);
+            $config["database"]["host"] = "127.0.0.1";
+            $config["database"]["name"] = "halalpulse_test";
+            $config["database"]["user"] = "halalpulse";
+            $config["database"]["password"] = "halalpulse_ci";
+            $config["documents"]["storage_path"] = getcwd() . "/storage/documents";
+            $config["sources"]["nse_integrated_rss"]["storage_path"] = getcwd() . "/storage/xbrl";
+            file_put_contents(
+                "config/config.local.php",
+                "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($config, true) . ";\n",
+            );
+          '
+          chmod 600 config/config.local.php
+
+      - name: Seed legacy and current candidates
+        env:
+          MYSQL_PWD: halalpulse_ci
+        run: |
+          mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u halalpulse halalpulse_test <<'SQL'
+          INSERT INTO companies (exchange, symbol, company_name)
+          VALUES ('NSE', 'MIGRATE', 'Migration Test Limited');
+
+          INSERT INTO filings (
+              company_id, exchange, source_id, category, subject, announced_at,
+              payload_hash, raw_payload, processing_status, processed_at
+          ) VALUES
+          (
+              (SELECT id FROM companies WHERE exchange='NSE' AND symbol='MIGRATE'),
+              'NSE', 'nse:migrate-direct', 'Financial Results', 'Direct Income migration fixture',
+              '2026-06-30 10:00:00', REPEAT('1', 64), JSON_OBJECT('fixture', 'direct'),
+              'processed', CURRENT_TIMESTAMP
+          ),
+          (
+              (SELECT id FROM companies WHERE exchange='NSE' AND symbol='MIGRATE'),
+              'NSE', 'nse:migrate-fallback', 'Financial Results', 'Revenue fallback migration fixture',
+              '2026-06-30 10:01:00', REPEAT('2', 64), JSON_OBJECT('fixture', 'fallback'),
+              'processed', CURRENT_TIMESTAMP
+          ),
+          (
+              (SELECT id FROM companies WHERE exchange='NSE' AND symbol='MIGRATE'),
+              'NSE', 'nse:migrate-duplicate', 'Financial Results', 'Duplicate total-income migration fixture',
+              '2026-06-30 10:02:00', REPEAT('3', 64), JSON_OBJECT('fixture', 'duplicate'),
+              'processed', CURRENT_TIMESTAMP
+          );
+
+          INSERT INTO nse_integrated_feed_items (
+              source_url, source_filename, company_name, description, filing_type,
+              revision_note, published_at, item_hash, raw_item, status, filing_id,
+              taxonomy_uri, first_discovered_at, last_seen_at, processed_at
+          ) VALUES
+          (
+              'https://nsearchives.nseindia.com/corporate/migrate-direct.xml',
+              'INTEGRATED_FILING_INDAS_MIGRATE_DIRECT_WEB.xml', 'Migration Test Limited',
+              'Direct Income migration fixture', 'original', '', '2026-06-30 10:00:00',
+              REPEAT('4', 64), JSON_OBJECT('fixture', 'direct'), 'processed',
+              (SELECT id FROM filings WHERE exchange='NSE' AND source_id='nse:migrate-direct'),
+              'https://www.sebi.gov.in/xbrl/synthetic.xsd',
+              CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          ),
+          (
+              'https://nsearchives.nseindia.com/corporate/migrate-fallback.xml',
+              'INTEGRATED_FILING_INDAS_MIGRATE_FALLBACK_WEB.xml', 'Migration Test Limited',
+              'Revenue fallback migration fixture', 'original', '', '2026-06-30 10:01:00',
+              REPEAT('5', 64), JSON_OBJECT('fixture', 'fallback'), 'processed',
+              (SELECT id FROM filings WHERE exchange='NSE' AND source_id='nse:migrate-fallback'),
+              'https://www.sebi.gov.in/xbrl/synthetic.xsd',
+              CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          ),
+          (
+              'https://nsearchives.nseindia.com/corporate/migrate-duplicate.xml',
+              'INTEGRATED_FILING_INDAS_MIGRATE_DUPLICATE_WEB.xml', 'Migration Test Limited',
+              'Duplicate total-income migration fixture', 'original', '', '2026-06-30 10:02:00',
+              REPEAT('6', 64), JSON_OBJECT('fixture', 'duplicate'), 'processed',
+              (SELECT id FROM filings WHERE exchange='NSE' AND source_id='nse:migrate-duplicate'),
+              'https://www.sebi.gov.in/xbrl/synthetic.xsd',
+              CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          );
+
+          INSERT INTO sharia_input_candidates (
+              company_id, integrated_item_id, period_end, metric_key, candidate_value,
+              currency, scale_label, source_fact_name, source_context_ref,
+              mapping_confidence, mapping_reason, review_status
+          ) VALUES
+          (
+              (SELECT id FROM companies WHERE exchange='NSE' AND symbol='MIGRATE'),
+              (SELECT id FROM nse_integrated_feed_items WHERE source_filename='INTEGRATED_FILING_INDAS_MIGRATE_DIRECT_WEB.xml'),
+              '2026-06-30', 'total_revenue', 1000, 'INR', 'one', 'Income', 'OneD',
+              90, 'Legacy direct total-income candidate.', 'pending'
+          ),
+          (
+              (SELECT id FROM companies WHERE exchange='NSE' AND symbol='MIGRATE'),
+              (SELECT id FROM nse_integrated_feed_items WHERE source_filename='INTEGRATED_FILING_INDAS_MIGRATE_FALLBACK_WEB.xml'),
+              '2026-06-30', 'total_revenue', 900, 'INR', 'one', 'RevenueFromOperations', 'OneD',
+              75, 'Legacy revenue-only fallback candidate.', 'pending'
+          ),
+          (
+              (SELECT id FROM companies WHERE exchange='NSE' AND symbol='MIGRATE'),
+              (SELECT id FROM nse_integrated_feed_items WHERE source_filename='INTEGRATED_FILING_INDAS_MIGRATE_DUPLICATE_WEB.xml'),
+              '2026-06-30', 'total_revenue', 1100, 'INR', 'one', 'TotalIncome', 'OneD',
+              90, 'Legacy duplicate direct candidate.', 'pending'
+          ),
+          (
+              (SELECT id FROM companies WHERE exchange='NSE' AND symbol='MIGRATE'),
+              (SELECT id FROM nse_integrated_feed_items WHERE source_filename='INTEGRATED_FILING_INDAS_MIGRATE_DUPLICATE_WEB.xml'),
+              '2026-06-30', 'total_income', 1100, 'INR', 'one', 'TotalIncome', 'OneD',
+              90, 'Current exact total-income candidate.', 'pending'
+          );
+          SQL
+
+      - name: Verify migration and idempotency
+        run: php tests/sharia-candidate-migration-db.php
+
+      - name: Verify CLI reports clean state
+        run: |
+          php cron/migrate-sharia-total-income-candidates.php | tee /tmp/sharia-candidate-migration.json
+          php -r '
+            $result = json_decode((string) file_get_contents("/tmp/sharia-candidate-migration.json"), true, 512, JSON_THROW_ON_ERROR);
+            if (($result["status"] ?? null) !== "succeeded"
+                || ($result["remaining_pending"] ?? -1) !== 0
+                || ($result["legacy_current_inputs"] ?? -1) !== 0) {
+                fwrite(STDERR, "Migration CLI did not report a clean idempotent state.\n");
+                exit(1);
+            }
+          '
+
+      - name: Confirm ignored runtime output
+        run: test -z "$(git status --short)"
