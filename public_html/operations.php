@@ -73,7 +73,7 @@ Page::begin(
     <div class="readiness-check-list">
         <article class="readiness-check">
             <span class="status status-manual_review">Screening</span>
-            <div><strong>Activate the versioned research screen with explicit acknowledgement</strong><p><span class="mono">/opt/alt/php83/usr/bin/php cron/activate-research-sharia-policy.php --acknowledge-research-only</span><br>This activates research pass/fail screening, including the HalalPulse 30% minimum real operating-assets rule. It does not claim a fatwa or independent Sharia certification. The separate verified-policy workflow remains available for future qualified review.</p></div>
+            <div><strong>Normalize legacy evidence, then activate the research screen</strong><p><span class="mono">/opt/alt/php83/usr/bin/php cron/migrate-sharia-total-income-candidates.php</span><br><span class="mono">/opt/alt/php83/usr/bin/php cron/activate-research-sharia-policy.php --acknowledge-research-only</span><br>The first command converts direct Income/TotalIncome candidates to the exact total-income key and retires revenue-only fallbacks without deleting their audit trail. The second activates research pass/fail screening, including the HalalPulse 30% minimum real operating-assets rule. It does not claim a fatwa or independent Sharia certification.</p></div>
         </article>
         <article class="readiness-check">
             <span class="status status-manual_review">Ranking</span>
