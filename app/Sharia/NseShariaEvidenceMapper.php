@@ -36,20 +36,8 @@ final class NseShariaEvidenceMapper
             confidence: 90,
             reason: 'Structured NSE XBRL total-income fact suggested as the exact total-income research-policy denominator. Administrator acceptance is required.',
         );
-        if ($totalIncome !== null) {
-            return [$totalIncome];
-        }
 
-        $revenue = $this->candidate(
-            facts: $result->facts,
-            names: ['RevenueFromOperations'],
-            metricKey: 'total_income',
-            currency: $currency,
-            confidence: 60,
-            reason: 'Structured NSE XBRL revenue-from-operations fact is only a provisional total-income candidate. Add and review other income before acceptance; do not accept it as total income when other income is material or unavailable.',
-        );
-
-        return $revenue === null ? [] : [$revenue];
+        return $totalIncome === null ? [] : [$totalIncome];
     }
 
     /**
